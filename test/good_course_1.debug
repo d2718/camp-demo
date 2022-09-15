@@ -1,0 +1,82 @@
+Course {
+    id: 0,
+    sym: "pc",
+    book: "Precalculus: Functions and Graphs",
+    title: "Core Precalculus",
+    level: 12.1,
+    weight: Some(
+        58.0,
+    ),
+    chapters: [
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 1,
+            title: "Chapter 1",
+            subject: Some(
+                "Topics from Algebra",
+            ),
+            weight: 8.0,
+        },
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 2,
+            title: "Chapter 2",
+            subject: Some(
+                "Graphs and Functions",
+            ),
+            weight: 9.0,
+        },
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 3,
+            title: "Chapter 3",
+            subject: Some(
+                "Polynomial and Rational Functions",
+            ),
+            weight: 8.0,
+        },
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 4,
+            title: "Chapter 4",
+            subject: Some(
+                "Exponential and Logarithmic Functions",
+            ),
+            weight: 8.0,
+        },
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 5,
+            title: "Chapter 5",
+            subject: Some(
+                "Trigonometric Functions",
+            ),
+            weight: 9.0,
+        },
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 6,
+            title: "Chapter 6",
+            subject: Some(
+                "Analytic Trigonometry",
+            ),
+            weight: 8.0,
+        },
+        Chapter {
+            id: 0,
+            course_id: 0,
+            seq: 7,
+            title: "Chapter 7",
+            subject: Some(
+                "Applications of Trigonometry",
+            ),
+            weight: 8.0,
+        },
+    ],
+}

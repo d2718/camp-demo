@@ -1,0 +1,461 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>CAMP | Admin View</title>
+        <link rel="stylesheet" href="/static/admin.css">
+        <link rel="stylesheet" href="/static/dialog.css">
+        <link rel="stylesheet" href="/static/util.css">
+        <link rel="stylesheet" href="/static/cal.css">
+        <link rel="icon" type="image/png" href="/static/camp_icon.png">
+        <script>
+const AUTH = {
+    uname: "{{uname}}",
+    key: "{{key}}"
+};
+        </script>
+        <script src="/static/admin.js" defer></script>
+        <script src="/static/cal.js" defer></script>
+    </head>
+    <body>
+        <ul class="tabs">
+
+<li>
+    <input type="radio" name="tabs" id="staff-tab-radio"
+           class="tab-button" checked>
+    <label for="staff-tab-radio" tabindex="0">Staff</label>
+
+    <div id="staff-tab-content" class="tab-content">
+        <h2>Admins</h2>
+        <div id="staff-admins">
+            <table id="admin-table" class="user-table">
+                <thead><th>uname</th><th>email</th><th>actions</th></thead>
+                <tbody></tbody>
+            </table>
+
+            <div>
+                <button id="add-admin"><label>add Admin</label></button>
+            </div>
+        </div>
+
+        <hr>
+
+        <h2>Bosses</h2>
+        <div id="staff-bosses">
+            <table id="boss-table" class="user-table">
+                <thead><th>uname</th><th>email</th><th>actions</th></thead>
+                <tbody></tbody>
+            </table>
+
+            <div>
+                <button id="add-boss"><label>add Boss</label></button>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <h2>Teachers</h2>
+        <div id="staff-teachers">
+            <table id="teacher-table" class="user-table">
+                <thead><th>uname</th><th>email</th><th>name</th><th>actions</th></thead>
+                <tbody></tbody>
+            </table>
+
+            <div>
+                <button id="add-teacher"><label>add Teacher</label></button>
+            </div>
+        </div>
+
+    </div>
+</li>
+
+<li>
+    <input type="radio" name="tabs" id="student-tab-radio"
+           class="tab-button">
+    <label for="student-tab-radio" tabindex="1">Students</label>
+
+    <div id="student-tab-content" class="tab-content">
+        <h2>Students</h2>
+        <div id="students">
+            <table id="student-table" class="user-table">
+                <thead><tr>
+                    <th>uname</th><th>name</th><th>teacher</th>
+                    <th>email</th><th>parent email</th><th>actions</th>
+                </tr></thead>
+                <tbody></tbody>
+            </table>
+
+            <div>
+                <button id="add-student"><label>add one Student</label></button>
+                <button id="upload-students"><label>upload CSV of Students</label></button>
+                <a href="/static/help/admin.html#toc-upload-students" rel="help" target="_blank">&#x1f6c8;</a>
+            </div>
+            <div class="right">
+                <button id="reset-students-button" title="Delete all Goals and Student Users.">
+                    <label>
+                        <img src="/static/error.svg">
+                        clear all Student data
+                        <img src="/static/error.svg">
+                    </label>
+                </button>
+            </div>
+        </div>
+    </div>
+</li>
+
+<li>
+    <input type="radio" name="tabs" id="course-tab-radio"
+           class="tab-button">
+    <label for="course-tab-radio" tabindex="2">Courses</label>
+
+    <div id="course-tab-content" class="tab-content">
+        <h2>Courses</h2>
+        <div id="courses">
+            <table id="course-table" class="user-table">
+                <thead><tr>
+                    <th>sym</th><th>course</th><th>level</th>
+                    <th>textbook</th><th>#chpt</th><th>actions</th>
+                </tr></thead>
+                <tbody></tbody>
+            </table>
+
+            <div>
+                <button id="add-course"><label>add new Course</label></button>
+                <button id="upload-course"><label>upload Course file</label></button>
+                <a href="/static/help/admin.html#toc-courses-upload" rel="help" target="_blank">&#x1f6c8;</a>
+            </div>
+        </div>
+    </div>
+</li>
+
+<li>
+    <input type="radio" name="tabs" id="cal-tab-radio"
+           class="tab-button">
+    <label for="cal-tab-radio" tabindex="3">Calendar</label>
+
+    <div id="cal-tab-content" class="tab-content">
+        <h2>Calendar <a href="/static/help/admin.html#toc-cal" rel="help" target="_blank">&#x1f6c8;</a></h2>
+
+        <form name="cal-dates" id="cal-dates-form">
+            <table id="cal-dates">
+                <tr>
+                    <td><label for="cal-end-of-fall">end of Fall</label></td>
+                    <td><input type="date" name="end-fall" id="cal-end-of-fall"></td>
+                </tr>
+                <tr>
+                    <td><label for="cal-end-of-spring">end of Spring</label></td>
+                    <td><input type="date" name="end-spring" id="cal-end-of-spring"></td>
+                </tr>
+            </table>
+        </form>
+
+        <div id="calendar-control">
+            <button id="cal-prev-year">
+                <label>&lsaquo;&#x2039;</label>
+            </button>
+            <input type="number" id="cal-year" min="2022">
+            <button id="cal-next-year">
+                <label>&#x203A;&rsaquo;</label>
+            </button>
+            <hr style="width: 10em;">
+            <button id="cal-update">
+                <label>save calendar</label>
+            </button>
+        </div>
+
+        <div id="calendar-display">
+
+        </div>
+    </div>
+</li>
+
+        </ul>
+
+        <div id="progress">
+            <img src="/static/blue_waiting.gif">
+            <ul></ul>
+        </div>
+
+        <div id="error">
+            <img src="/static/error.svg">
+            <ul></ul>
+            <button id="dismiss-errors">
+                <label><img src="/static/dismiss.svg"></label>
+            </button>
+        </div>
+
+        <dialog id="alter-admin" class="edit">
+            <h1>Admin Details</h1>
+            <form name="alter-admin" method="dialog">
+                <label for="alter-admin-uname">
+                    <a href="/static/help/admin.html#toc-users-uname" rel="help" target="_blank">&#x1f6c8;</a>
+                    uname
+                </label>
+                <input name="uname" id="alter-admin-uname"
+                       required pattern="^[a-zA-Z0-9]+$">
+                <label for="alter-admin-email">email</label>
+                <input type="email" name="email" id="alter-admin-email"
+                       required>
+                <button id="alter-admin-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="alter-admin-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-admin">
+                    <label>delete this Admin</label>
+                </button>
+            </div>
+        </dialog>
+        
+        <dialog id="alter-boss" class="edit">
+            <h1>Boss Details</h1>
+            <form name="alter-boss", method="dialog">
+                <label for="alter-boss-uname">
+                    <a href="/static/help/admin.html#toc-users-uname" rel="help" target="_blank">&#x1f6c8;</a>
+                    uname
+                </label>
+                <input name="uname" id="alter-boss-uname"
+                       required pattern="^[a-zA-Z0-9]+$">
+                <label for="alter-boss-email">email</label>
+                <input type="email" name="email" id="alter-boss-email"
+                       required>
+                <button id="alter-boss-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="alter-boss-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-boss">
+                    <label>delete this Boss</label>
+                </button>
+            </div>
+        </dialog>
+
+        <dialog id="alter-teacher" class="edit">
+            <h1>Teacher Details</h1>
+            <form name="alter-teacher" method="dialog">
+                <label for="alter-teacher-uname">
+                    <a href="/static/help/admin.html#toc-users-uname" rel="help" target="_blank">&#x1f6c8;</a>
+                    uname
+                </label>
+                <input name="uname" id="alter-teacher-uname"
+                       required pattern="^[a-zA-Z0-9]+$">
+                <label for="alter-teacher-email">email</label>
+                <input type="email" name="email" id="alter-teacher-email"
+                       required>
+                <label for="alter-teacher-name">name</label>
+                <input name="name" id="alter-teacher-name"
+                       required pattern=".*\S.*">
+                <button id="alter-teacher-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="alter-teacher-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-teacher">
+                    <label>delete this Teacher</label>
+                </button>
+            </div>
+        </dialog>
+
+        <dialog id="alter-student" class="edit">
+            <h1>Student Details</h1>
+            <form name="alter-student" method="dialog">
+                <label for="alter-student-uname">
+                    <a href="/static/help/admin.html#toc-users-uname" rel="help" target="_blank">&#x1f6c8;</a>
+                    uname
+                </label>
+                <input name="uname" id="alter-student-uname"
+                       required pattern="^[a-zA-Z0-9]+$">
+                <label for="alter-student-last">last</label>
+                <input name="last" id="alter-student-last"
+                       required pattern=".*\S.*">
+                <label for="alter-student-rest">rest</label>
+                <input name="rest" id="alter-student-rest" required>
+                <label for="alter-student-teacher">teacher</label>
+                <select name="teacher" id="alter-student-teacher" required></select>
+                <label for="alter-student-email">email</label>
+                <input type="email" name="email" id="alter-student-email"
+                       required>
+                <label for="alter-student-parent">
+                    <a href="/static/help/admin.html#toc-users-parent" rel="help" target="_blank">&#x1f6c8;</a>
+                    parent email
+                </label>
+                <input type="email" name="parent" id="alter-student-parent"
+                       required>
+                <button id="alter-student-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="alter-student-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-student">
+                    <label>delete this Student</label>
+                </button>
+            </div>
+        </dialog>
+
+        <dialog id="upload-students-dialog" class="edit">
+            <h1>Upload CSV File of Students</h1>
+            <form name="upload-students" method="dialog">
+                <label for="upload-students-file">file</label>
+                <input type="file" name="file" id="upload-students-file" required>
+                <button id="upload-students-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="upload-students-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="upload-course-dialog" class="edit">
+            <h1>Upload Course File</h1>
+            <form name="upload-course" method="dialog">
+                <label for="upload-course-file">file</label>
+                <input type="file" name="file" id="upload-course-file" required>
+                <button id="upload-course-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="upload-course-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="alter-course" class="edit">
+            <h1>Course Data</h1>
+            <form name="alter-course" method="dialog">
+                <label for="alter-courses-sym">
+                    <a href="/static/help/admin.html#toc-courses-sym" rel="help" target="_blank">&#x1f6c8;</a>
+                    sym
+                </label>
+                <input name="sym" id="alter-course-id"
+                       reqired pattern="^[a-zA-Z0-9]+$">
+                <label for="alter-course-title">course title</label>
+                <input name="title" id="alter-course-title"
+                       required pattern=".*\S.*">
+                <label for="alter-course-level">
+                    <a href="/static/help/admin.html#toc-courses-level" rel="help" target="_blank">&#x1f6c8;</a>
+                    level</label>
+                <input type="number" name="level" id="alter-course-level"
+                       min="0.000" max="15.000" step="0.0001" required>
+                <label for="alter-course-book">textbook</label>
+                <input name="book" id="alter-course-book">
+                <button id="alter-course-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="alter-course-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-course">
+                    <label>delete this Course</label>
+                </button>
+            </div>
+        </dialog>
+
+        <dialog id="alter-chapter" class="edit">
+            <h1>Chapter Details</h1>
+            <form name="alter-chapter" method="dialog">
+                <label for="alter-chapter-seq">chapter #</label>
+                <input type="number" name="seq" id="alter-chapter-seq"
+                       step="1", min="0" required>
+                <label for="alter-chapter-title">
+                    <a href="/static/help/admin.html#toc-chapter-title" rel="help" target="_blank">&#x1f6c8;</a>
+                    title
+                </label>
+                <input name="title" id="alter-chapter-title">
+                <label for="alter-chapter-subject">
+                    <a href="/static/help/admin.html#toc-chapter-subject" rel="help" target="_blank">&#x1f6c8;</a>
+                    subject</label>
+                <input name="subject" id="alter-chapter-subject">
+                <label for="alter-chapter-weight">
+                    <a href="/static/help/admin.html#toc-chapter-weight" rel="help" target="_blank">&#x1f6c8;</a>
+                    weight
+                </label>
+                <input type="number" name="weight" id="alter-chapter=weight"
+                       step="0.01", min="0.01" value="1.0">
+                <button id="alter-chapter-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="alter-chapter-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+                
+                <input type="hidden" name="id">
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-chapter">
+                    <label>delete this Chapter</label>
+                </button>
+            </div>
+        </dialog>
+
+        <dialog id="reset-students" class="edit">
+            <h1>Delete all Student Data</h1>
+            <p>This will completely erase all student data: all pace goals,
+                all records of the students themselves. This is intended as
+                a sort of "reset button" to be used between academic years,
+                but you may not want to use it even then.</p>
+            <form name="reset-students" method="dialog">
+                <button id="reset-students-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="reset-students-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="are-you-sure">
+            <h1>&iquest;Are you sure?</h1>
+            <p id="are-you-sure-message"></p>
+            <form name="confirmation" method="dialog">
+                <button id="confirmation-cancel" value="cancel">
+                    <label class="cancel">No, I am not.</label>
+                </button>
+                <button id="confirmation-confirm" value="ok">
+                    <label class="confirm">Yes, I sure am.</label>
+                </button>
+            </form>
+        </dialog>
+        
+        <div id="old-browser">
+            <div>
+                <h2>Update your Browser</h2>
+
+                <p>Because I am lazy, this web interface relies on a
+                <em>relatively</em> modern browser feature, which your
+                browser evidently doesn't support. A version at least as
+                recent as one of the following should do the trick:</p>
+
+                <ul>
+                    <li>Chrome version 37 (August 2014)</li>
+                    <li>Firefox version 98 (March 2022)</li>
+                    <li>Safari version 15.4 (March 2022)</li>
+                    <li>MS Edge 79 (January 2020)</li>
+                    <li>Opera 24 (September 2014)</li>
+                </ul>
+            </div>
+        </div>
+
+    <script src="/static/util.js"></script>
+    </body>
+</html>

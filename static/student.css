@@ -1,0 +1,27 @@
+body {
+    text-align: center;
+    background-color: #ccc; 
+}
+
+div#content > div { margin-bottom: 1em; }
+
+table {
+    display: inline-block;
+    border-collapse: collapse;
+    border: 1ex solid #888;
+}
+
+tr { border-bottom: 1px dotted #888; }
+tbody > tr:last-child { border-bottom: none; }
+tr.done { background-color: #cfc; }
+tr.late { background-color: #ffc; }
+tr.overdue { background-color: #fcc; }
+tr.yet { background-color: white; }
+
+th, td { padding: 0.5ex; }
+td[title] { cursor: default; }
+tr > td:first-child { text-align: left; }
+tr > td:nth-child(2) { text-align: left; }
+tr.summary > td:first-child { text-align: right; }
+
+ul { list-style-type: none; }

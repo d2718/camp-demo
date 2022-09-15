@@ -1,0 +1,66 @@
+body {
+    margin: 0; border: 0; padding: 0;
+    background-color: #ccc;
+    color: #246;
+    font-family: serif;
+    text-align: center;
+}
+
+div#column {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    align-items: center;
+}
+
+div#login-error {
+    display: block;
+    margin: 1em auto;
+    padding: 1em;
+    width: 60ex;
+    background-color: #fca;
+    border: 1ex solid #820;
+    border-radius: 1ex;
+    text-align: justify;
+}
+
+form#login {
+    display: inline-grid;
+    margin-left: auto; margin-right: auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+}
+
+form#forgot {
+    display: none;
+    margin-left: auto; margin-right: auto;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto;
+}
+
+form.twocol > * {
+    align-self: center;
+    margin: 0.5ex;
+}
+form.twocol > *:nth-child(odd) { justify-self: end; }
+form.twocol > *:nth-child(even) { justify-self: start; }
+
+p#forgot-link {
+    cursor: pointer;
+    text-decoration: underline dotted #48c;
+}
+p#forgot-link:hover { text-decoration: underline; }
+
+p#forgot-instructions {
+    display: none;
+    text-align: justify;
+    max-width: 60ex;
+}
+
+div#footer {
+    position: absolute;
+    bottom: 1ex;
+    left: 1em;
+    width: calc(100vw - 2em);
+    font-size: smaller;
+}

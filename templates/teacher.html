@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>CAMP | {{name}} Teacher View</title>
+        <link rel="stylesheet" href="/static/teacher.css">
+        <link rel="stylesheet" href="/static/dialog.css">
+        <link rel="stylesheet" href="/static/util.css">
+        <link rel="icon" type="image/png" href="/static/camp_icon.png">
+        <script>
+const AUTH = {
+    uname: "{{uname}}",
+    key: "{{key}}"
+};
+        </script>
+        <script src="/static/teacher.js" defer></script>
+    </head>
+    <body>
+        <d id="content-container">
+            <div id="headline">
+                <h1>Teacher <kbd>{{uname}}</kbd> ({{name}})</h1>
+                <span>
+                    <a href="/static/help/teacher.html#toc-csv" rel="help" target="_blank">&#x1f6c8;</a>
+                    <button id="upload-goals">
+                        <label for="upload-goals">upload CSV of Goals</label>
+                    </button>
+                </span>
+            </div>
+            
+            <div id="cals"></div>
+        </div>
+
+        <div id="course-info-show" title="show available courses">
+            <img src="/static/up_chevron.svg">
+        </div>
+        <div id="course-info-hide" title="hide available courses">
+            <img src="/static/down_chevron.svg">
+        </div>
+
+        <div id="course-info">
+            <table id="genl-courses">
+                <thead><tr><th colspan="2">General Math</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <table id="hs-courses">
+                <thead><tr><th colspan="2">High School Math</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div id="course-table-spacer"></div>
+        </div>
+
+        <div id="progress">
+            <img src="/static/blue_waiting.gif">
+            <ul></ul>
+        </div>
+
+        <div id="error">
+            <img src="/static/error.svg">
+            <ul></ul>
+            <button>
+                <label><img src="/static/dismiss.svg"></label>
+            </button>
+        </div>
+
+        <dialog id="upload-goals-dialog" class="edit">
+            <h1>Upload Goals File</h1>
+            <form name="upload-goals" method="dialog">
+                <label for="upload-goals-file">file</label>
+                <input type="file" name="file" id="upload-goals-file" required>
+                <button id="upload-goals-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="upload-goals-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="complete-goal" class="edit">
+            <h1>Completion Details</h1>
+            <p id="complete-goal-meta"></p>
+            <form name="complete-goal" method="dialog">
+                <label for="complete-goal-done">done</label>
+                <input type="date" name="done" id="complete-goal-done">
+                <label for="complete-goal-tries">tries</label>
+                <input type="number" name="tries" id="complete-goal-tries">
+                <label for="complete-goal-score">
+                    <a href="/static/help/teacher.html#toc-scores" rel="help" target="_blank">&#x1f6c8;</a>
+                    score
+                </label>
+                <input name="score" id="complete-goal-score">
+                <button id="complete-goal-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="complete-goal-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+
+                <input type="hidden" name="id">
+            </form>
+        </dialog>
+
+        <dialog id="edit-goal" class="edit">
+            <h1>Goal Details</h1>
+            <p id="edit-goal-meta"></p>
+            <form name="edit-goal" method="dialog">
+                <label for="edit-goal-course">
+                    <a href="/static/help/teacher.html#toc-sym" rel="help" target="_blank">&#x1f6c8;</a>
+                    course
+                </label>
+                <!-- Need <OPTIONS> for this to be dynamically set. -->
+                <input name="course" id="edit-goal-course"
+                       list="course-names" required>
+                <label for="edit-goal-seq">chapter</label>
+                <!-- SET max/min dynamically based on coruse. -->
+                <input type="number" name="seq" id="edit-goal-seq"
+                       list="course-seqs" required>
+                <label for="edit-goal-due">due</label>
+                <input type="date" name="due" id="edit-goal-due">
+                <label for="edit-goal-review">review</label>
+                <input type="checkbox" name="review" id="edit-goal-review">
+                <label for="edit-goal-incomplete">incomplete</label>
+                <input type="checkbox" name="incomplete" id="edit-goal-incomplete">
+                <button id="edit-goal-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="edit-goal-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+
+                <input type="hidden" name="id">
+            </form>
+            <hr>
+            <div class="center">
+                <button id="delete-goal">
+                    <label>delete this Goal</label>
+                </button>
+            </div>
+        </dialog>
+
+        <dialog id="are-you-sure">
+            <h1>&iquest;Are you sure?</h1>
+            <p id="are-you-sure-message"></p>
+            <form name="confirmation" method="dialog">
+                <button id="confirmation-cancel" value="cancel">
+                    <label class="cancel">No, I am not.</label>
+                </button>
+                <button id="confirmation-confirm" value="ok">
+                    <label class="confirm">Yes, I sure am.</label>
+                </button>
+            </form>
+        </dialog>
+
+        <div id="old-browser">
+            <div>
+                <h2>Update your Browser</h2>
+
+                <p>Because I am lazy, this web interface relies on a
+                <em>relatively</em> modern browser feature, which your
+                browser evidently doesn't support. A version at least as
+                recent as one of the following should do the trick:</p>
+
+                <ul>
+                    <li>Chrome version 37 (August 2014)</li>
+                    <li>Firefox version 98 (March 2022)</li>
+                    <li>Safari version 15.4 (March 2022)</li>
+                    <li>MS Edge 79 (January 2020)</li>
+                    <li>Opera 24 (September 2014)</li>
+                </ul>
+            </div>
+        </div>
+
+        <datalist id="course-names"></datalist>
+        <datalist id="course-seqs"></datalist>
+
+        <script src="/static/util.js"></script>
+    </body>
+</html>

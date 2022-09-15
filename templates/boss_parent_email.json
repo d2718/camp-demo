@@ -1,0 +1,16 @@
+{
+    "personalizations": [
+        {"to": [
+            {"email": "{{ parent }}", "name": "Parent of {{ name }}"}
+        ]}
+    ],
+    "from": { "email": "mathbot@camelotacademy.org", "name": "CAMP Math Bot"},
+    "reply_to": {"email": "no-reply@camelotacademy.org", "name": "Do Not Reply"},
+    "subject": "{{ name }}'s Math Progress",
+    "content": [
+        {
+            "type": "text/plain",
+            "value": "{{ text }}"
+        }
+    ]
+}

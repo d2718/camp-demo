@@ -1,0 +1,320 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>CAMP | Help (Teacher)</title>
+        <link rel="stylesheet" href="/static/help/help.css">
+        <link rel="icon" type="image/png" href="/static/camp_icon.png">
+    </head>
+    <body>
+        <div id="header">
+            <h1>CAMP Help</h1>
+            <p>for Teachers</p>
+        </div>
+        <div id="content">
+<h2>General Issues</h2>
+
+<h3 id="toc-sym">Course Symbols</h3>
+
+<p>
+    Each Mathematics course in the system has a unique short chunk of
+    letters and numbers that is used to uniquely identify it. This helps
+    differentiate, say, Honors Algebra I using the <cite>Discovering
+    Algebra</cite> book from the Mathspace Honors Algebra I course.
+    These appear in the "Goal Details" dialog when editing or adding a
+    pace goal for a student:
+</p>
+
+<div class="dialog">
+    <h1>Goal Details</h1>
+    <form>
+        <label for="edit-goal-course">course</label>
+        <!-- Need <OPTIONS> for this to be dynamically set. -->
+        <input name="course" id="edit-goal-course"
+               list="course-names" required style="width: 60ex;">
+        <label for="edit-goal-seq">chapter</label>
+        <input type="number" name="seq" id="edit-goal-seq"
+               list="course-seqs" required>
+        <label for="edit-goal-due">due</label>
+        <input type="date" name="due" id="edit-goal-due">
+        <label for="edit-goal-review">review</label>
+        <input type="checkbox" name="review" id="edit-goal-review">
+        <label for="edit-goal-incomplete">incomplete</label>
+        <input type="checkbox" name="incomplete" id="edit-goal-incomplete">
+        <button id="edit-goal-cancel">
+            <label class="cancel">cancel</label>
+        </button>
+        <button id="edit-goal-confirm">
+            <label class="confirm">confirm</label>
+        </button>
+    </form>
+    <hr>
+    <div class="center">
+        <button id="delete-goal">
+            <label>delete this Goal</label>
+        </button>
+    </div>
+    </form>
+</div>
+
+<p>
+    And they are also required when adding goals in bulk by
+    <a href="#toc-csv">uploading a CSV
+    file</a>. But
+</p>
+<h4>You needn't remember them!</h4>
+<p>
+    If you start typing the name of a course (<em>e.g.</em>, <kbd>algebra</kbd>)
+    in the "course" input of the "Goal Details" dialog, a little dropdown box
+    should auto-suggest some courses (including the one you want), and you can
+    just select the appropriate course that way.
+</p>
+<p>
+    Also, the lower-right-hand corner of the Teacher's view should contain a
+    little upward-pointing chevron in a box:
+</p>
+<div id="course-info-show" title="show available courses">
+    <img src="/static/up_chevron.svg">
+</div>
+<p>
+    Clicking on that box should toggle the expansion of a list of all courses
+    in the system and their symbols.
+</p>
+
+<h3 id="toc-scores">Score Representations</h3>
+
+<p>Chapter goal and Final Exam scores can be expressed in three different ways:</p>
+
+<p>
+    As a decimal:<br>
+    <label>score:</label> <input value="0.93"> &RightArrow; (93%)
+</p>
+<p>
+    As a percent:<br>
+    <label>score:</label> <input value="85"> &RightArrow; (85%)
+</p>
+<p>
+    As a fraction:<br>
+    <label>score:</label> <input value="13.5/15"> &RightArrow; (90%)
+</p>
+
+<p>The software will try its best to guess which of the three you mean.</p>
+
+<div class="center"><aside>
+    In case you really care:
+    <ul>
+        <li>If the score has a fraction in it, it will be calculated by dividing
+            the top by the bottom.</li>
+        <li>If the value is less than 2.0, it will be interpreted as a decimal
+            (that is, a score out of 1).</li>
+        <li>If the value is greater than 2.0, it will be interpreted as a
+            percent (that is, a score out of 100).</li>
+    </ul>
+</aside></div>
+
+<h2 id="toc-csv">CSV of Goals</h2>
+
+<p>
+    Adding goals one at a time with the
+    <button><label>add goal ⊞</label></button> button is intuitive but tedious.
+    Goals can be added in bulk by uploading a CSV file. The format of the CSV
+    file is as follows:
+</p>
+
+<ul>
+    <li>One goal per row.</li>
+    <li>Rows that start with an octothorpe (<kbd>#</kbd>) are ignored, so you
+    write reminders to yourself, (<em>e.g.,</em> to help remember the column
+    order).</li>
+    <li>Speaking of column order, it is:<br>
+    <code>uname, <a href="#toc-sym">course symbol</a>, chapter #, year, month, day, review, incomplete</code></li>
+    <li><em>Any</em> text in either the <kbd>review</kbd> or <kbd>incomplete</kbd>
+    columns will mark the given goal as such; leaving the given column blank
+    leaves that property unmarked.</li>
+    <li>Any other column can be left blank (except <code>chapter#</code>), and
+        its value will be inferred from previous line.</li>
+</ul>
+
+<p>Let's look at a couple of illustrative examples:</p>
+
+<table class="csv"><tbody>
+    <tr><td>#uname</td><td>symbol</td><td>ch #</td><td>year</td><td>month</td><td>day</td><td>rev</td><td>inc</td></tr>
+    <tr><td>jsmith</td><td>pha1</td><td>9</td><td>2022</td><td>8</td><td>14</td><td>x</td><td></td></tr>
+    <tr><td>jsmith</td><td>phg</td><td>10</td><td>2022</td><td>8</td><td>28</td><td></td><td>x</td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>1</td><td>2022</td><td>9</td><td>9</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>2</td><td>2022</td><td>9</td><td>27</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>3</td><td>2022</td><td>10</td><td>18</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>4</td><td>2022</td><td>11</td><td>4</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>5</td><td>2022</td><td>12</td><td>1</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>6</td><td>2023</td><td>1</td><td>6</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>7</td><td>2023</td><td>2</td><td>1</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>8</td><td>2023</td><td>2</td><td>22</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>9</td><td>2023</td><td>3</td><td>10</td><td></td><td></td></tr>
+    <tr><td>jsmith</td><td>pha2</td><td>10</td><td>2023</td><td>3</td><td>24</td><td></td><td></td></tr>
+</tbody></table>
+
+<p>The spreadsheet excerpt above shows a series of goals for the student with
+    user name <kbd>jsmith</kbd>.
+</p>
+<ul>
+    <li>The first row is ignored because it starts with <kbd>#</kbd>, and serves
+    only to remind us of the order of the columns as we fill them out.</li>
+    <li>The first goal is a review of Chapter 9 of Algebra I (from the
+        <cite>Prentice Hall Algebra 1</cite> book).</li>
+    <li>The second goal is Chapter 10 of Geometry (from the
+        <cite>Prentice Hall Geometry</cite> book.)</li>
+    <li>The next 10 goals are the 10 chapters of Core Algebra II from
+        the <cite>Prentice Hall Algebra 2</cite> textbook.</li>
+    <li>The goals are more-or-less evenly-spaced throughout the academic year.</li>
+</ul>
+
+<p>We could have expressed this same information with less typing by leaving many
+    of these columns blank and relying on the software's elision rules:</p>
+
+<table class="csv"><tbody>
+    <tr><td>jsmith</td><td>pha1</td><td>9</td><td>2022</td><td>8</td><td>14</td><td>x</td><td></td></tr>
+    <tr><td></td><td>phg</td><td>10</td><td></td><td></td><td>28</td><td></td><td>x</td></tr>
+    <tr><td></td><td>pha2</td><td>1</td><td></td><td>9</td><td>9</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>2</td><td></td><td></td><td>27</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>3</td><td></td><td>10</td><td>18</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>4</td><td></td><td>11</td><td>4</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>5</td><td></td><td>12</td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>6</td><td>2023</td><td>1</td><td>6</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>7</td><td></td><td>2</td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>8</td><td></td><td></td><td>22</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>9</td><td></td><td>3</td><td>10</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>10</td><td></td><td></td><td>24</td><td></td><td></td></tr>
+</tbody></table>
+
+<p>And we could save thinking about goal spacing by just putting any old dates in (as
+    long as they aren't in a chronologically backwards order), and relying on the
+    <a href="#toc-footer-autopace"><button><label>autopace</label></button></a>
+    function:</p>
+
+<table class="csv"><tbody>
+    <tr><td>#uname</td><td>symbol</td><td>ch #</td><td>year</td><td>month</td><td>day</td><td>rev</td><td>inc</td></tr>
+    <tr><td>jsmith</td><td>pha1</td><td>9</td><td>2022</td><td>8</td><td>1</td><td>x</td><td></td></tr>
+    <tr><td></td><td>phg</td><td>10</td><td></td><td></td><td>2</td><td></td><td>x</td></tr>
+    <tr><td></td><td>pha2</td><td>1</td><td></td><td></td><td>3</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>2</td><td></td><td></td><td>4</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>3</td><td></td><td></td><td>5</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>4</td><td></td><td></td><td>6</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>5</td><td></td><td></td><td>7</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>6</td><td></td><td></td><td>8</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>7</td><td></td><td></td><td>9</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>8</td><td></td><td></td><td>10</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>9</td><td></td><td></td><td>11</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>10</td><td></td><td></td><td>12</td><td></td><td></td></tr>
+</tbody></table>
+
+<p>And you can put all of your goals in a single spreadsheet file; you don't
+    need a separate file for each student.
+</p>
+
+<table class="csv"><tbody>
+    <tr><td>#uname</td><td>sym</td><td>seq</td><td>y</td><td>m</td><td>d</td><td>rev</td><td>inc</td></tr>
+    <tr><td>wholt</td><td>dah</td><td>11</td><td>2022</td><td>9</td><td>1</td><td></td><td>y</td></tr>
+    <tr><td></td><td>pch</td><td>1</td><td>2022</td><td>9</td><td>2</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>2</td><td></td><td></td><td>3</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>3</td><td></td><td></td><td>4</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>4</td><td></td><td></td><td>5</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>5</td><td></td><td></td><td>6</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>6</td><td></td><td></td><td>7</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>7</td><td></td><td></td><td>8</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>8</td><td></td><td></td><td>9</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>9</td><td></td><td></td><td>10</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>10</td><td></td><td></td><td>11</td><td></td><td></td></tr>
+    <tr><td>emack</td><td>pha1</td><td>5</td><td>2022</td><td>9</td><td>1</td><td>y</td><td></td></tr>
+    <tr><td></td><td></td><td>10</td><td></td><td></td><td>1</td><td>y</td><td></td></tr>
+    <tr><td></td><td>phgh</td><td>1</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>2</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>3</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>4</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>5</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>6</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>7</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>9</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>10</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>11</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td>eparker</td><td>ch</td><td>1</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>2</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>3</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>4</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>5</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>6</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>7</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>9</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>10</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td>zmilk</td><td>8</td><td>3</td><td></td><td></td><td>1</td><td>y</td><td></td></tr>
+    <tr><td></td><td>dah</td><td>11</td><td></td><td></td><td>1</td><td></td><td>y</td></tr>
+    <tr><td></td><td>pc</td><td>1</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>2</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>3</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>4</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>5</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>6</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+    <tr><td></td><td></td><td>7</td><td></td><td></td><td>1</td><td></td><td></td></tr>
+</tbody></table>
+
+<h2 id="toc-footer">Table Footer Information</h2>
+
+<p>The <button><label>&#x2304; more &#x2304;</label></button> at the bottom of a table
+    will open a footer with more editable information and some additional actions:</p>
+
+<table class="table-footer"><tbody>
+    <tr class="more"><td><div class="fullwidth">
+        <button><label>⌃ less ⌃</label></button>
+        <a href="/static/help/teacher.html#toc-footer" rel="help" target="_blank">🛈</a>
+        <button><label>add goal ⊞</label></button>
+    </div></td></tr>
+    <tr class="extra"><td>
+        <form>
+            <label for="fall-notices">Fall Notices</label>
+            <input id="fall-notices" type="number" min="0" value="1">
+            <input id="spring-notices" type="number" min="0" value="0">
+            <label for="spring-notices">Spring Notices</label>
+            <label for="fall-exam">Fall Exam Score</label>
+            <input id="fall-exam">
+            <input id="spring-exam">
+            <label for="spring-exam">Spring Exam Score</label>
+            <label for="fall-exam-frac">Fall Exam Fraction</label>
+            <input type="number" id="fall-exam-frac" min="0.00" max="1.00" step="0.01" value="0.2">
+            <input type="number" id="spring-exam-frac" min="0.00" max="1.00" step="0.01" value="0.2">
+            <label for="spring-exam-frac">Spring Exam Fraction</label>
+            <button><label>update</label></button>
+        </form>
+        <div>
+            <button><label>autopace</label></button>
+            <button><label>clear all goals</label></button>
+        </div>
+    </td></tr>
+</tbody></table>
+
+<p>The Notices and <a href="#toc-scores">Exam Score</a> inputs should be
+    self-explanatory. The "Exam Fraction" inputs indicate what portion
+    a student's total semester grade is made up by the Final Exam grade.
+    For Upper-School students this should more or less always be <kbd>0.2</kbd>
+    (because US exams are unilaterally 20% of a student's grade), but
+    this may differ for some Middle-Grades students.
+</p>
+
+<p>The <button><label>update</label></button> button will save the
+    values of the six inputs in the footer.</p>
+
+<p>The <button><label>clear all goals</label></button> button will
+    (shocker) delete all of the given student's goals.</p>
+
+<p id="toc-footer-autopace">Finally,
+    <button><label>autopace</label></button> will distribute the due dates
+    of the given student's goals evenly throughout the academic year.</p>
+
+<div class="center"><aside>The "autopace" function only works on goals
+    that <em>already have</em> due dates. Goals without due dates will
+    be ignored.</aside></div>
+
+    <datalist id="course-names"><option value="5">5: 5th Grade Math (Heath Orange Book)</option><option value="6">6: 6th Grade Math (Heath Blue Book)</option><option value="7">7: 7th Grade Math (Heath Green Book)</option><option value="8">8: 8th Grade Math (Heath Brown Book)</option><option value="pha1">pha1: Algebra I (Prentice Hall Algebra 1)</option><option value="dah">dah: Honors Algebra (Discovering Algebra)</option><option value="pha1h">pha1h: Honors Algebra I (Prentice Hall Algebra 1)</option><option value="phg">phg: Geometry (Prentice Hall Geometry)</option><option value="phgh">phgh: Honors Geometry (Prentice Hall Geometry)</option><option value="pha2">pha2: Core Algebra II (Prentice Hall Algebra 2)</option><option value="pha2h">pha2h: Honors Algebra II (Prentice Hall Algebra 2)</option><option value="pc">pc: Core Precalculus (Precalculus: Functions and Graphs)</option><option value="pch">pch: Honors Precalculus (Precalculus: Functions and Graphs)</option><option value="c">c: Core Calculus (Calculus: Graphical, Numerical, Algebraic)</option><option value="ch">ch: Honors Calculus (Calculus: Graphical, Numerical, Algebraic)</option></datalist>
+
+    </body>
+</html>

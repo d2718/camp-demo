@@ -1,0 +1,46 @@
+dialog.edit {
+    position: fixed;
+    top: 1em;
+    /*  If These next two property values seem like going around your ass to
+        get to your elbow, it's because "right: 1em;" didn't work. */
+    left: calc(100vw - 1em);
+    transform: translate(-100%, 0);
+
+    min-width: 50ex;
+    background-color: #eee;
+    border: 1ex solid #888;
+    padding: 1em;
+}
+dialog > h1 {
+    text-align: center;
+    font-size: 100%;
+    margin-bottom: 1em;
+}
+
+dialog > form {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1ex 1ex;
+}
+dialog > form > *:nth-child(odd) { justify-self: end; }
+dialog > form >*:nth-child(even) { justify-self: start; }
+dialog > form label { white-space: nowrap; }
+
+input { font-family: monospace; }
+input:invalid { background-color: #fcc; }
+input:valid { background-color: #cfc; }
+input[type="email"] { min-width: 36ex; }
+
+dialog button {
+    padding: 0.3ex;
+    min-width: 2em;
+    border: 1px solid #234;
+    border-radius: 0.5ex;
+}
+
+dialog hr {
+    height: 1ex;
+    background-color: #ccc;
+    border: 1px solid #bbb;
+    margin: 1em 0;
+}

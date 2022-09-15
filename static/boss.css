@@ -1,0 +1,120 @@
+@font-face {
+    font-family: "PT Sans";
+    src: url("/static/PT_Sans-Narrow-Web-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "mplus1m";
+    src: url("/static/mplus-1m-regular.woff2") format("woff2");
+}
+
+* {
+    border: 0; margin: 0; padding: 0;
+    box-sizing: border-box;
+}
+
+body { width: 100vw; padding: 1em; }
+div.center { text-align: center; }
+ul { padding-left: 2em; }
+p { text-align: justify; }
+kbd { font-family: mplus1m, monospace; }
+.bad { color: #822; }
+.right { text-align: right; }
+
+button {
+    border: 1px solid #888;
+    border-radius: 0.5em;
+    padding: 0.5em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+button img { width: 1.5em; }
+
+div#header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em; gap: 1em;
+    background-color: #ddd;
+}
+
+div#controls {
+    display: inline-flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1em;
+}
+div#controls button label {
+    width: 12ex;
+    font-family: mplus1m, monospace;
+}
+
+div#cals {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 1em 0; gap: 1em;
+    align-items: flex-start;
+}
+
+table.cal {
+    border-collapse: collapse;
+    font-family: "PT Sans";
+    border: 1px solid #888;
+}
+
+div.head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0.5ex; gap: 1em;
+    background-color: #ddd;
+    cursor: pointer;
+}
+div.head > div {
+    display: flex;
+    gap: 0.5ex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+div.head > div:first-child { align-items: flex-start; }
+div.head > div:last-child  { align-items: flex-end; }
+div.head span.name { font-size: larger; }
+
+table.inc span.name { color: #822; }
+table.lag span.lag { color: #822; }
+table.count span.count { color: #822; }
+
+table.cal tbody { display: none; }
+
+tbody td,
+tbody th { padding: 2px 0.5ex; }
+td[title] { cursor: default; }
+tbody td:nth-child(3),
+tbody td:nth-child(4),
+tbody td:nth-child(5) { text-align: center; }
+tbody td:last-child { text-align: right; }
+
+tbody tr { border-bottom: 1px dotted #888; }
+tbody tr:last-child { border-bottom: none; }
+
+tbody tr.done    { background-color: #cfc; }
+tbody tr.late    { background-color: #ffc; }
+tbody tr.overdue { background-color: #fcc; }
+tbody tr.yet     { background-color: white; }
+
+tbody tr.extra { background-color: #ddd; }
+tbody tr.extra button {
+    border: 1px solid #888;
+    border-radius: 0.5em;
+    padding: 0.5em;
+}
+
+textarea#email-text {
+    min-width: 40vw;
+    min-height: 40vh;
+    padding: 1ex;
+    margin: 1em;
+}
+
+dialog#edit-email p { text-align: center; }

@@ -1,0 +1,15 @@
+title = "Honors Algebra II"
+sym   = "msa2h"
+book  = "Mathspace Algebra 2"
+level = 11.501
+
+1,  12,,Functions
+2,  12,,Complex #s & Quadratics
+3,  10,,Polynomials
+4,   9,,Radicals
+5,   8,,Rational Functions
+6,  11,,Exponential & Logarithmic Functions
+7,   8,,Sequences & Series
+8,   9,,Trigonometric Functions
+9,   8,,Trigonometric Graphs
+11,  5,,Statistics

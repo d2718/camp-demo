@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>cal.js Test</title>
+        <script src="/static/cal.js"></script>
+        <style>
+table.calendar-month {
+    display: inline-block;
+    user-select: none;
+}
+table.calendar-month td {
+    text-align: right;
+    font-family: monospace;
+    cursor: pointer;
+    padding: 0.3ex;
+}
+table.calendar-month td.y {
+    background-color: #234;
+    color: #8cf;
+}
+div#out {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 1em;
+}
+        </style>
+    </head>
+    <body>
+        <div id="out"></div>
+    <script>
+const OUT = document.getElementById("out");
+const moz = [
+    [2022, 7], [2022, 8], [2022, 9], [2022, 10], [2022, 11],
+    [2023, 0], [2023, 1], [2023, 2], [2023, 3], [2023, 4], [2023, 5], [2022, 6]
+];
+for(const [y, m] of moz) {
+    const tab = CAL.make_month(y, m);
+    OUT.appendChild(tab);
+}
+    </script>
+    </body>
+</html>

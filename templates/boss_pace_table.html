@@ -1,0 +1,29 @@
+<table class="{{ table_class }}" data-uname="{{ uname }}" data-name="{{ name }}"
+       data-tname="{{ tuname }}" data-lag="{{ lag }}">
+    <thead>
+        <tr><td colspan="6"><div class="head">
+            <div>
+                <span class="name" title="{{ uname }}">{{ name }}</span>
+                <span class="tname" title="{{ tuname }}">{{ teacher }}</span>
+            </div>
+            <div>
+                <span class="lag">{{ lagstr }}</span>
+                <span class="count">done {{ n_done }} / {{ n_due }} due</span>
+            </div>
+        </div></td></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th>course</th><th>chapter</th><th>R/I</th>
+            <th>due</th><th>done</th><th>score</th>
+        </tr>
+        {{ rows }}
+        <tr class="extra">
+            <td colspan="6">
+                <button data-uname="{{ uname }}">
+                    <label>email {{ rest }}'s parent</label>
+                </button>
+            </td>
+        </tr>
+    </tbody>
+</table>

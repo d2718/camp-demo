@@ -1,0 +1,122 @@
+@font-face {
+    font-family: "PT Sans";
+    src: url("/static/PT_Sans-Narrow-Web-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "mplus1m";
+    src: url("/static/mplus-1m-regular.woff2") format("woff2");
+}
+
+* { box-sizing: border-box; }
+
+body { padding: 0 1em; }
+
+p, ul, ol, dl {
+    font-family: "PT Sans", serif;
+    max-width: 80ex;
+    text-align: justify;
+    line-height: 1.3em;
+}
+dt { font-style: italic; }
+
+a[rel="help"] { text-decoration: none; }
+
+div.center {
+    text-align: center;
+    max-width: 80ex;
+}
+
+div.dialog {
+    display: inline-block;
+    min-width: 50ex;
+    max-width: 80ex;
+    background-color: #eee;
+    border: 1ex solid #888;
+    padding: 1em;
+}
+div.dialog > h1 {
+    text-align: center;
+    font-size: 100%;
+    margin-bottom: 1em;
+}
+div.dialog > form {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1ex 1ex;
+}
+div.dialog > form > *:nth-child(odd) { justify-self: end; }
+div.dialog > form > *:nth-child(even) { justify-self: start; }
+div.dialog > form label { white-space: pre; }
+div.dialog input { font-family: monospace; }
+div.dialog input:invalid { background-color: #fcc; }
+div.dialog input:valid { background-color: #cfc; }
+div.dialog input[type="email"] { min-width: 36ex; }
+
+div.dialog button {
+    padding: 0.3ex;
+    min-width: 2em;
+    border: 1px solid #234;
+    border-radius: 0.5ex;
+}
+div.dialog hr {
+    height: 1ex;
+    background-color: #ccc;
+    border: 1px solid #bbb;
+    margin: 1em 0;
+}
+
+div#course-info-show {
+    display: inline-flex;
+    padding: 1ex;
+    background-color: white;
+    border: 1ex solid #aaa;
+}
+div#course-info-show img { width: 1.5em; }
+
+div.center aside {
+    display: inline-block;
+    max-width: 80ex;
+    padding: 1em;
+    font-size: smaller;
+    background: linear-gradient(white, #eee, white);
+    text-align: justify;
+}
+
+table.csv {
+    border-collapse: collapse;
+    border: 1ex solid #888;
+}
+table.csv td {
+    font-family: monospace;
+    border: 1px dotted #888;
+    padding: 0.3ex 0.7ex;
+}
+
+table.table-footer {
+    font-family: "PT Sans", serif;
+    background-color: #ccc;
+    font-size: smaller;
+}
+table.table-footer td div.fullwidth {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ex;
+}
+table.table-footer tr.extra form {
+    display: grid;
+    grid-template-columns: 1fr 10ex 10ex 1fr;
+    gap: 1ex;
+    justify-content: center;
+    align-content: center;
+    padding: 1ex;
+}
+tr.extra form > *:nth-child(4n+1) { justify-self: end; }
+table.table-footer tr.extra form > button {
+    justify-self: center;
+    grid-column: 2 / 4;
+}
+table.table-footer tr.extra td div {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5 ex;
+}

@@ -1,0 +1,305 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>CAMP | Help (Admin)</title>
+        <link rel="stylesheet" href="/static/help/help.css">
+        <link rel="icon" type="image/png" href="/static/camp_icon.png">
+    </head>
+    <body>
+        <div id="header">
+            <h1>CAMP Help</h1>
+            <p>for Admins</p>
+        </div>
+        <div id="content">
+
+<h2 id="toc-users">Users</h3>
+
+<p>
+    There are four classes of user:
+</p>
+
+<dl>
+    <dt>Admin</dt>
+    <dd>The <dfn>Admin</dfn> is responsible for adding, removing, and updating
+    users of the system; adding, removing, and updating courses, and
+    maintaining the academic year calendar.</dd>
+
+    <dt>Boss</dt>
+    <dd>The <dfn>Boss</dfn> sees an overview of <em>all</em> students'
+    progress, as well as the ability to send automatically-generated
+    email messages to parents. (After Phase II is complete, the Boss will
+    also have access to all student reports.)</dd>
+
+    <dt>Teacher</dt>
+    <dd>The <dfn>Teacher</dfn> has a comprehensive view of all students
+    assigned to them (by the Admin), and can add and update their goals,
+    Exam scores, and some other grade-relevant information. (After Phase II
+    is complete, the Teacher will also have access to an additional tranche
+    of report-oriented data and the ability to auto-generate, edit, and
+    publish reports.)</dd>
+
+    <dt>Student</dt>
+    <dd>The <dfn>Student</dfn> has only the ability to view their individual
+    pace calendar, progress, and score.</dd>
+</dl>
+
+<p>
+    It is possible for a person to be more than one type of user; it is
+    undoubtedly convenient for at least one Teacher to also be an Admin, and
+    the Boss may also want Admin access as well. All this requires is that
+    a person have a separate <a href="#toc-users-uname">uname</a> for each role.
+</p>
+
+<p>
+    Each role needs to have a valid email address associated with it. This is
+    how a user will set their password initially (and reset it later, if
+    necessary).
+</p>
+
+<h3 id="toc-users-uname">User Names</h3>
+
+<p>
+    A user's identity is tied to their user name (or, as this system almost
+    universally refers to it, their <dfn>uname</dfn>). They are uniquely
+    identified by this uname, and their privileges and capabilities are
+    determined by it. Unames may only contain alphanumeric characters and are
+    case-sensitive.
+</p>
+<div class="center"><aside>
+    A uname must match the regular expression <code>/^[a-zA-Z0-9]+$/</code>.
+</aside></div>
+<p>
+    It is recommended to give staff the shortest and most convenient unames,
+    as they will undoubtedly be logging into the system most often. As the
+    system will probably only ever have around 100 users at any given time,
+    no one should end up with a uname that's particularly confusing, obscure,
+    or inconvenient.
+</p>
+
+<h3 id="toc-users-parent">Parent Email</h3>
+
+<p>
+    It is important that the Student have a valid parent email associated with
+    them, as it is how the parents receive automated messages from the system.
+    (It also ensures the parent can reset the password at any time and thus have
+    access to their student's progress.)
+</p>
+
+<h3 id="toc-upload-students">CSV of Students</h2>
+
+<p>
+    Students can be added one at a time with the
+    <button><label>add one Student</label></button> button; this is fine when
+    a single new student enters the system, say, partway through the academic
+    year, but in the fall when <em>all</em> the known students are being
+    added this can be tedious. Students can therefore be added in bulk by
+    uploading their information in a CSV file. The format of the file is as
+    follows:
+</p>
+
+<ul>
+    <li>One student record per line.</li>
+    <li>Lines beginning with an octothorpe (<kbd>#</kbd>) are considered
+        "comments" and ignored.</li>
+    <li>Unlike when uploading student <em>goals</em>, columns may not be
+        elided.</li>
+    <li>Column order is:<br>
+    <kbd>user name, last name, rest of name, student email, parent email, teacher uname</kbd></li>
+</ul>
+
+<p>Let's look at an example:</p>
+
+<table class="csv"><tbody>
+    <tr><td>#uname</td><td>last</td><td>rest</td><td>email</td><td>parent</td><td>tuname</td></tr>
+    <tr><td>#</td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>eparker</td><td>Parker</td><td>Elisabeth Elaine</td><td>e.e.parker@gmail.com</td><td>r.l.parker@gmail.com</td><td>jenny</td></tr>
+    <tr><td>bpow</td><td>Powell</td><td>Brian</td><td>b.powwwwww@gmail.com</td><td>willy.powell@gmail.com</td><td>jenny</td></tr>
+    <tr><td>wholt</td><td>Holt</td><td>Willa C.</td><td>willa@holt-info.com</td><td>kim@holt-info.com</td><td>jenny</td></tr>
+    <tr><td>ck1</td><td>Cui</td><td>Kangyao (Kevin)</td><td>kangyao@gmail.com</td><td>nates.parents@email.org</td><td>irfan</td></tr>
+    <tr><td>zmilk</td><td>Milkereit</td><td>Zack</td><td>zaxusername@gmail.com</td><td>dave.milk@gmail.com</td><td>irfan</td></tr>
+</tbody></table>
+
+<p>
+    Note that the first two lines begin with <kbd>#</kbd> and are ignored.
+</p>
+
+<h2 id="toc-courses">Courses</h3>
+
+<h3 id="toc-courses-sym">Course Symbols</h3>
+
+<p>
+    Each Mathematics course has a unique short chunk of letters and numbers
+    that is used to uniquely identify it. This helps differentiate, for
+    example, Honors Algebra I from the <cite>Prentice Hall Algebra 1</cite>
+    textbook from Honors Algebra I from <cite>Discovering Algebra</cite>.
+</p>
+
+<p>
+    The symbol, like the <a href="#toc-users-uname">uname</a>, is a
+    case-sensitive string of alphanumeric characters. It should be reasonably
+    mnemonic and should make sense as a representation of the course it
+    represents. For example, Algebra I from <cite>Prentice Hall Algebra
+    1</cite> has historically been <kbd>pha1</kbd>; the honors version of
+    the same course has been <kbd>pha1h</kbd>.
+</p>
+<div class="center"><aside>
+    A course symbol must match the regular expression
+    <code>/^[a-zA-Z0-9]+$/</code>.
+</aside></div>
+
+<h3 id="toc-courses-level">Course Level</h3>
+
+<p>
+    The <dfn>course level</dfn> is mainly used to sort courses into a
+    roughly chronological order. It should be a decimal number with the
+    integral portion the grade level, and the decimal portion a vague
+    representation of how "difficult" or "challenging" that course is
+    relative to other courses at that grade level. For example, Core
+    Geometry courses have generally fallen in the [10.0, 10.5) range,
+    while Honors Geometry courses have fallen in the [10.5, 11.0) range.
+</p>
+
+<h3 id="toc-chapter-title">Chapter Titles</h3>
+
+<p>
+    Chapters are automatically named upon creation based on their sequence in
+    the book, but you can rename them if you want.
+</p>
+
+<h3 id="toc-chapter-subject">Chapter Subject</h3>
+
+<p>
+    A chapter doesn't have to have a subject, but it's convenient for everyone
+    involved (except you, obviously, who has to do the work of adding this
+    information to the database).
+</p>
+
+<h3 id="toc-chapter-weight">Chapter Weight</h3>
+
+<p>
+    A chapter's weight is used by the Teacher's
+    <button><label>autopace</label></button> function to size the chunk of
+    time allotted to complete that chapter as a goal. By default, when
+    a chapter is inserted (with
+    <button><label>+ append Chapter</label></button> or
+    <button><label>+ append N Chapters</label></button>), it is initially
+    assigned a weight of 1.0. It's fine for an entire course to have each
+    chapter weighted equally. When individually weighting chapters in a
+    course, I generally assign a weight by counting the number of sections
+    in the chapter and adding two.
+</p>
+
+<h3 id="toc-courses-upload">Upload Course File</h3>
+
+<p>
+    Adding a Course with the <button><label>add new Course</label></button>
+    button followed by the <button><label>+ append N Chapters</label></button>
+    button is fairly straightforward. However, if you want to customize the
+    titles, subjects, or weights of each Chapter, this method can rapidly
+    become tedious. Hence, the option to upload all the information about a
+    course in a single text file.
+</p>
+
+<p>
+    The file format consists of a <a href="https://toml.io/en/">TOML</a>
+    header specifying data about the overall course, followed by one or more
+    blank lines, followed by a CSV body for specifyhing data about each
+    chapter.
+</p>
+
+<p>
+    The TOML header has four key/value pairs (all requried):
+</p>
+
+<ul>
+    <li><code>title</code> (a string value)</li>
+    <li><code>sym</code> (a string value, the
+        <a href="#toc-courses-sym">course symbol</a>)</li>
+    <li><code>book</code> (a string value, the texbook for the course,
+        technically required, but it can be blank)</li>
+    <li><code>level</code> (a floating-point number, the
+        <a href="#toc-courses-level">course level</a>)</li>
+</ul>
+
+<p>
+    The CSV portion has four columns: <code>chapter #, weight, title,
+    subject</code>. All the columns except for the <code>chapter #</code>
+    can be left blank, and a suitable default will be supplied. Blank lines
+    and lines beginning with an octothorpe (<code>#</code>) are ignored.
+</p>
+
+<p>
+    Let's look at a couple of examples. The Core Calculus course file looks
+    thus:
+</p>
+
+<pre>
+title = "Core Calculus"
+sym = "c"
+book = "Calculus: Graphical, Numerical, Algebraic"
+level = 13.1
+
+# Last three columns are optional.
+# Weights will default to 1.0, titles will default to "Chapter N", and
+# subjects will default to nothing.
+#
+#chapter,   weight,     title,      subject
+1,          8,          Chapter 1,  Prerequisites
+2,          6,          Chapter 2,  Limits & Continuity
+3,          11,         Chapter 3,  Derivatives
+4,          8,          Chapter 4,  Applications of Derivatives
+5,          7,          Chapter 5,  The Definite Integral
+6,          7,          Chapter 6,  Differential Exqns & Modeling
+7,          7,          Chapter 7,  Applications of Integration
+</pre>
+
+<p>
+    As you can see, all of the Chapter data is explicitly defined here:
+    chapter weights, titles, and subjects. The 6th Grade Heath Blue book
+    course file has the absolute minimum amount of data specified (only
+    the chapter numbers):
+</p>
+
+<pre>
+title = "6th Grade Math"
+sym = "6"
+book = "Heath Blue Book"
+level = 6.0
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre>
+
+<p>
+    For several more examples, see the <kbd>fakeprod_data/courses</kbd>
+    directory from the Github repository.
+</p>
+
+<h2 id="toc-cal">The Calendar</h2>
+
+<p>
+    The Calendar tab has facilities for setting both end-of-semester dates,
+    and specifying all of the "working days" available over the course of the
+    academic year. Working day distribution is necessary for the Teacher's
+    <button><label>autopace</label></button> function to work properly, and
+    end-of-semester dates are necessary for semester grades to be calculated
+    correctly.
+</p>
+
+<p>
+    End-of-semester dates obviously get set with the input fields at the top
+    of the tab; calendar working days are toggled by clicking and dragging on
+    the calendar. Just make sure you click <button><label>save
+    calendar</label></button> before navigating away from the page.
+</p>

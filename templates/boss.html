@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>CAMP | Boss View ({{uname}})</title>
+        <link rel="stylesheet" href="/static/boss.css">
+        <link rel="stylesheet" href="/static/dialog.css">
+        <link rel="stylesheet" href="/static/util.css">
+        <link rel="icon" type="image/png" href="/static/camp_icon.png">
+        <script>
+const AUTH = {
+    uname: "{{uname}}",
+    key: "{{key}}"
+};
+        </script>
+        <script src="/static/boss.js" defer></script>
+    </head>
+    <body>
+        <div id="header">
+            <h1>Boss <kbd>{{uname}}</kbd> view</h1>
+            <div id="controls">
+                <span>sort by:</span>
+                <button id="name"><label>name</label></button>
+                <button id="teacher"><label>teacher</label></button>
+                <button id="lag"><label>lag</label></button>
+            </div>
+        </div>
+        <div id="cals">{{calendars}}</div>
+        <div class="right">
+            <button id="email-all">
+                <img src="/static/error.svg">
+                <label>email all parents</label>
+                <img src="/static/error.svg">
+            </button>
+        </div>
+
+        <div id="progress">
+            <img src="/static/blue_waiting.gif">
+            <ul></ul>
+        </div>
+
+        <div id="error">
+            <img src="/static/error.svg">
+            <ul></ul>
+            <button id="dismiss-errors">
+                <label><img src="/static/dismiss.svg"></label>
+            </button>
+        </div>
+
+        <dialog id="edit-email" class="edit">
+            <h1>Edit Email</h1>
+            <p>To <span id="email-subject"></span>'s parent.</p>
+            <textarea id="email-text"></textarea>
+            <form name="edit-email" method="dialog">
+                <button id="edit-email-cancel">
+                    <label class="cancel">cancel</label>
+                </button>
+                <button id="edit-email-confirm">
+                    <label class="confirm">confirm</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="are-you-sure">
+            <h1>&iquest;Are you sure?</h1>
+            <p id="are-you-sure-message"></p>
+            <form name="confirmation" method="dialog">
+                <button id="confirmation-cancel" value="cancel">
+                    <label class="cancel">No, I am not.</label>
+                </button>
+                <button id="confirmation-confirm" value="ok">
+                    <label class="confirm">Yes, I sure am.</label>
+                </button>
+            </form>
+        </dialog>
+
+        <div id="old-browser">
+            <div>
+                <h2>Update your Browser</h2>
+
+                <p>Because I am lazy, this web interface relies on a
+                <em>relatively</em> modern browser feature, which your
+                browser evidently doesn't support. A version at least as
+                recent as one of the following should do the trick:</p>
+
+                <ul>
+                    <li>Chrome version 37 (August 2014)</li>
+                    <li>Firefox version 98 (March 2022)</li>
+                    <li>Safari version 15.4 (March 2022)</li>
+                    <li>MS Edge 79 (January 2020)</li>
+                    <li>Opera 24 (September 2014)</li>
+                </ul>
+            </div>
+        </div>
+
+        <script src="/static/util.js"></script>
+    </body>
+</html>

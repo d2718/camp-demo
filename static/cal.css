@@ -1,0 +1,49 @@
+table.calendar-month {
+    display: inline-block;
+    border-collapse: collapse;
+    user-select: none;
+}
+
+table.calendar-month th {
+    text-align: center;
+}
+
+table.calendar-month td {
+    text-align: right;
+    font-family: monospace;
+    cursor: pointer;
+    padding: 0.4ex;
+    border: 2px solid #ddd;
+}
+
+table.calendar-month td.y {
+    background-color: #344;
+    color: #bdd;
+}
+table.calendar-month td.m {
+    background-color: #aa4;
+    color: #668;
+}
+table.calendar-month td[data-special] {
+    border-color: red;
+}
+
+div#calendar-display {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 1em;
+}
+
+div#calendar-control {
+    margin: 1em 0;
+    display: flex;
+    gap: 1em;
+}
+
+input#cal-year { max-width: 10ex; }
+
+table#cal-dates { margin: 1em 0; }
+
+table#cal-dates td { padding: 0.3ex; }
+table#cal-dates td:first-child { text-align: right; }

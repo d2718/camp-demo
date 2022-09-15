@@ -1,0 +1,75 @@
+div#progress,
+div#error {
+    display: none;
+    position: fixed;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 50vw;
+    min-width: 60ex;
+    max-width: 100ex;
+    border-width: 1ex;
+    border-radius: 1ex;
+    border-style: solid;
+}
+div#progress {
+    justify-content: flex-start;
+    background-color: #abc;
+    border-color: #248;
+    bottom: 1em; right: 1em;
+    z-index: 2;
+}
+div#error {
+    justify-content: space-between;
+    background-color: #fca;
+    border-color: #820;
+    top: 1em; left: 1em;
+    z-index: 5;
+}
+div#progress > *,
+div#error > * { margin: 1em; }
+div#progress img { width: 3em; }
+div#error img { width: 3em; }
+div#progress ul,
+div#error > ul {
+    list-style-type: circle;
+}
+div#progress > ul > li,
+div#error > ul > li {
+    font-family: monospace;
+    white-space: pre-wrap;
+    text-align: left;
+}
+
+dialog#are-you-sure {
+    position: fixed;
+    top: 50vh; left: 50vw;
+    transform: translate(-50%, -50%);
+    background-color: #adf;
+    border: 1ex solid #268;
+    padding: 1em;
+}
+dialog#are-you-sure > form {
+    display: flex;
+    justify-content: space-evenly;
+}
+p#are-you-sure-message { margin-bottom: 1em; }
+
+div#old-browser {
+    display: none;
+    position: fixed;
+    width: 100vw; height: 100vh;
+    top: 0; left: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 12;
+}
+div#old-browser > div {
+    position: absolute;
+    display: inline-block;
+    min-width: 60ex;
+    width: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #dbc;
+}
+div#old-browser > div > * { margin: 1em; }
+div#old-browser > div > h2 { text-align: center; }

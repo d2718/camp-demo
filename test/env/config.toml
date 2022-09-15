@@ -1,0 +1,6 @@
+auth_db_connect_string = "host=localhost user=camp_test password='camp_test' dbname=camp_auth_test"
+data_db_connect_string = "host=localhost user=camp_test password='camp_test' dbname=camp_store_test"
+admin_uname = "root"
+admin_password = "pwd"
+admin_email = "dan@camelotacademy.org"
+sendgrid_auth_string = "lol, this isn't real"

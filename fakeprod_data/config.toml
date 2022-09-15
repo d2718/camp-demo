@@ -1,0 +1,3 @@
+auth_db_connect_string = "host=localhost user=camp_test password='camp_test' dbname=camp_auth_fakeprod"
+data_db_connect_string = "host=localhost user=camp_test password='camp_test' dbname=camp_store_fakeprod"
+sendgrid_auth_string = "Yabba dabba doo!"

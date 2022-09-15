@@ -1,0 +1,16 @@
+To the Parent of {{ full_name }},
+
+This email was generated automatically to update you about your student's progress in Mathematics.
+
+As of {{ date }}, your student has completed {{ n_done }} of the {{ n_due_str }} passed. (Your student has {{ n_scheduled }} total goals assigned for the year.)
+{{ last_done_statement }}
+For a more comprehensive view of your student's progress, please visit
+
+{{ service_uri }}
+
+and log in using your student's user name, "{{ uname }}". (If you have forgotten the password, attempting to log in unsuccessfully will offer you the option to reset it.)
+
+This email was generated automatically; please do not reply to mathbot@camelotacademy.org. For more information, you may email your student's Math teacher, {{ teacher }}, at {{ temail }}.
+
+Warmest Human Regards,
+The Camelot Academy Math Pace Bot

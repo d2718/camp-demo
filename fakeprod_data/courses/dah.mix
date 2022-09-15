@@ -1,0 +1,18 @@
+title = "Honors Algebra"
+sym = "dah"
+book = "Discovering Algebra"
+level = 9.6
+
+#chapter,   weight,     title,      subject
+0,  7,  Chapter 0,  Fractions & Fractals
+1,  10, Chapter 1,  Data Exploration
+2,  10, Chapter 2,  Proportional Reasoning & Variation
+3,  9,  Chapter 3,  Linear Equations
+4,  10, Chapter 4,  Fitting a Line to Data
+5,  9,  Chapter 5,  Sytems of Eqxn & Inequalities
+6,  10, Chapter 6,  Exponents & Exponential Models
+7,  8,  Chapter 7,  Functions
+8,  9,  Chapter 8,  Transformations
+9,  10, Chapter 9,  Quadratic Models
+10, 8,  Chapter 10, Probability
+11, 10, Chapter 11, Trigonometry

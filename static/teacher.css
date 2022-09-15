@@ -1,0 +1,194 @@
+@font-face {
+    font-family: "PT Sans";
+    src: url("/static/PT_Sans-Narrow-Web-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "mplus1m";
+    src: url("/static/mplus-1m-regular.woff2") format("woff2");
+}
+
+* {
+    border: 0; margin: 0; padding: 0;
+    box-sizing: border-box;
+}
+
+body { width: 100vw; padding: 1em; }
+div.center { text-align: center; }
+ul { padding-left: 2em; }
+p { text-align: justify; }
+kbd { font-family: mplus1m, monospace; }
+.bad { color: #822; }
+
+div#content-container { 
+    background-color: #aaa;
+    padding: 1em;
+}
+
+div#headline {
+    display: flex;
+    justify-content: space-between;
+}
+div#headline h1 { display: inline-block; }
+div#headline span { display: inline-block; }
+div#headline button {
+    border: 1px solid #888;
+    border-radius: 0.5ex;
+    padding: 0 0.5ex;
+    height: 100%;
+}
+
+div#cals {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 1em;
+    margin-top: 1em;
+}
+
+table.pace {
+    font-family: "PT Sans", serif;
+    font-size: smaller;
+    border-collapse: collapse;
+}
+table.pace tbody tr { border-bottom: 1px dotted #aaa; }
+table.pace tbody tr:last-child { border-bottom: none; }
+table.pace tbody td { padding: 0 0.5ex; }
+table.pace tbody td[title] { cursor: default; }
+table.pace tbody td.edit {
+    display: flex;
+    gap: 0.5ex;
+}
+table.pace tbody td.due,
+table.pace tbody td.done,
+table.pace tbody td.tries,
+table.pace tbody td.score { font-family: mplus1m, monospace; }
+table.pace tbody td.tries,
+table.pace tbody td.score { text-align: right; }
+
+table.pace tbody tr.semsum { background-color: #ccc; }
+table.pace tbody tr.semsum td:first-child { text-align: right; }
+table.pace tbody tr.semsum td:last-child {
+    text-align: left;
+    font-family: mplus1m, monospace;
+}
+
+table.pace thead { background-color: #ccc; }
+table.pace thead th { padding: 0.5ex; }
+table.pace div.summary {
+    display: flex;
+    flex-wrap: none;
+    justify-content: space-between;
+    align-items: end;
+}
+table.pace div.summary > * { margin: 0.5ex 0.5ex 0; }
+table.pace div.summary span.full {
+    font-size: 125%;
+    margin-right: 1em;
+}
+
+table.pace td div.fullwidth {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ex;
+}
+
+tr.yet  { background-color: white; }
+tr.late { background-color: #ffb; }
+tr.done { background-color: #bfb; }
+tr.due  { background-color: #fbb; }
+table.pace tr.bad td { color: #822; }
+
+table.pace td button {
+    min-width: 1.5em; min-height: 1.5em;
+    border: 1px solid #888;
+    border-radius: 0.5ex;
+    padding: 0 0.5ex;
+}
+
+table.pace tbody tr.more { background-color: #ccc; }
+table.pace tbody tr.extra { 
+    display: none;
+    background-color: #ccc;
+}
+
+table.pace tbody tr.extra form {
+    display: grid;
+    grid-template-columns: 1fr 10ex 10ex 1fr;
+    gap: 1ex;
+    justify-content: center;
+    align-content: center;
+    padding: 1ex;
+}
+tr.extra form > *:nth-child(4n+1) {
+    justify-self: end;
+}
+table.pace tbody tr.extra form > button {
+    justify-self: center;
+    grid-column: 2 / 4;
+}
+
+table.pace tbody tr.extra td div {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5ex;
+}
+
+div#course-info {
+    position: fixed;
+    /* display: inline-flex; */
+    display: none;
+    flex-direction: row;
+    align-items: flex-start;
+    right: 1em; bottom: 1em;
+    padding: 1em;
+    padding-right: 0;
+    gap: 1em;
+    background-color: white;
+    border: 1ex solid #aaa;
+    z-index: 3;
+}
+div#course-info table {
+    font-size: smaller;
+    border-collapse: collapse;
+}
+div#course-info td { padding: 0.2ex 0.5ex; }
+div#course-info tbody tr:nth-child(odd) { background-color: #ccc; }
+div#course-info td:first-child {
+    font-family: mplus1m, monospace;
+    font-size: initial;
+    text-align: right;
+    padding-right: 1ex;
+}
+div#course-info cite::before { content: ' ('; }
+div#course-info cite::after { content: ')'; }
+
+div#course-info-show,
+div#course-info-hide {
+    position: fixed;
+    bottom: 1em; right: 1em;
+    padding: 1ex;
+    background-color: white;
+    border: 1ex solid #aaa;
+}
+div#course-info-show { 
+    z-index: 2;
+    display: inline-flex;
+}
+div#course-info-hide { 
+    display: none;
+    z-index: 4;
+}
+
+div#course-info-show img,
+div#course-info-hide img { width: 1.5em; }
+
+div#course-table-spacer { width: calc(1.5em + 3ex); }
+
+dialog#edit-goal input#edit-goal-course { width: 60ex; }
+
+a[rel="help"] {
+    cursor: help;
+    text-decoration: none;
+}
+
+tr.more a[rel="help"] { display: none; }
