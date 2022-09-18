@@ -7,3 +7,4 @@ target/release
 target/x86_64-unknown-linux-musl/debug
 target/x86_64-unknown-linux-musl/release/*
 !target/x86_64-unknown-linux-musl/release/camp
+!target/x86_64-unknown-linux-musl/release/pandocker

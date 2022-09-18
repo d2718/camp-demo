@@ -23,7 +23,7 @@ simplelog = "^0.12"
 smallstr = { version = "^0.3", features = ["serde"] }
 smallvec = { version = "^1.9", features = ["write"] }
 time = { version = "^0.3", features = ["formatting", "macros", "parsing"] }
-tokio = { version = "^1.2", features = ["macros", "rt"] }
+tokio = { version = "^1.2", features = ["io-util", "macros", "process", "rt", "time"] }
 tokio-postgres = { version = "^0.7", features = ["array-impls", "with-time-0_3"] }
 toml = "^0.5"
 tower = "^0.4"
