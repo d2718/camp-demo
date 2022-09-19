@@ -2,7 +2,6 @@
 The `Goal` struct and `Pace` calendars, for internally represending pace
 calendar information.
 */
-use core::ops::Deref;
 use std::{
     cmp::Ordering,
     collections::HashMap,
@@ -17,6 +16,42 @@ use crate::{
     user::{Student, Teacher, User},
     MiniString, MEDSTORE,
 };
+
+#[derive(Debug)]
+pub enum Term {
+    Fall,
+    Spring,
+    Summer,
+}
+
+impl Term {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Term::Fall => "Fall",
+            Term::Spring => "Spring",
+            Term::Summer => "Summer",
+        }
+    }
+}
+
+impl std::fmt::Display for Term {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl std::str::FromStr for Term {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Fall" => Ok(Term::Fall),
+            "Spring" => Ok(Term::Spring),
+            "Summer" => Ok(Term::Summer),
+            _ => Err(format!("{:?} is not a valid Term.", s)),
+        }
+    }
+}
 
 /**
 Attempt to interpret a [`&str`] that might represent a grade or a score
@@ -725,25 +760,6 @@ impl Pace {
     }
 }
 
-/// This is used in order to abstract [`generate_summary`] so a single
-/// function can generate both Fall and Spring semester summaries.
-#[derive(Debug)]
-enum Sem {
-    Fall,
-    Spring,
-}
-
-impl Deref for Sem {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            Sem::Fall => "Fall",
-            Sem::Spring => "Spring",
-        }
-    }
-}
-
 /**
 Represents the state of the `Goal` on the current day:
   * `Done`: completed before the due date
@@ -916,8 +932,10 @@ pub struct PaceDisplay<'a> {
 ///
 /// Produces 0-4 lines, depending on what the student has done (or at
 /// least what information is available about what the student has done).
+///
+/// This shouldn't be called for the Summer term.
 fn generate_summary(
-    sem: Sem,
+    term: Term,
     sem_frac: f32,
     n_notices: i16,
     exam_frac: f32,
@@ -926,7 +944,7 @@ fn generate_summary(
 ) -> Result<SmallVec<[RowDisplay<'_>; 4]>, String> {
     log::trace!(
         "generate_summary( {:?}, {}, {}, {}, {:?}) called.",
-        &sem,
+        &term,
         &sem_frac,
         &n_notices,
         &exam_frac,
@@ -936,9 +954,12 @@ fn generate_summary(
     let mut lines: SmallVec<[RowDisplay; 4]> = SmallVec::new();
 
     let int_score = (sem_frac * 100.0).round() as i32;
-    let label = match sem {
-        Sem::Fall => "Fall Test Average",
-        Sem::Spring => "Spring Test Average",
+    let label = match term {
+        Term::Fall => "Fall Test Average",
+        Term::Spring => "Spring Test Average",
+        // This shouldn't be called for the Summer term, so just return an
+        // empty Vec of rows.
+        Term::Summer => { return Ok(lines); }
     };
     let mut value: MiniString<MEDSTORE> = MiniString::new();
     write!(&mut value, "{}", &int_score)
@@ -970,9 +991,10 @@ fn generate_summary(
         }
 
         let int_pct = sem_pct.round() as i32;
-        let label = match sem {
-            Sem::Fall => "Fall Semester Grade",
-            Sem::Spring => "Spring Semester Grade",
+        let label = match term {
+            Term::Fall => "Fall Semester Grade",
+            Term::Spring => "Spring Semester Grade",
+            _ => unreachable!(),
         };
         let mut value: MiniString<MEDSTORE> = MiniString::new();
         write!(&mut value, "{}", &int_pct)
@@ -1075,7 +1097,7 @@ impl<'a> PaceDisplay<'a> {
             if semf_done > 0 {
                 let sem_frac = semf_total / (semf_done as f32);
                 generate_summary(
-                    Sem::Fall,
+                    Term::Fall,
                     sem_frac,
                     p.student.fall_notices,
                     p.student.fall_exam_fraction,
@@ -1093,7 +1115,7 @@ impl<'a> PaceDisplay<'a> {
             if sems_done > 0 {
                 let sem_frac = sems_total / (sems_done as f32);
                 generate_summary(
-                    Sem::Spring,
+                    Term::Spring,
                     sem_frac,
                     p.student.spring_notices,
                     p.student.spring_exam_fraction,

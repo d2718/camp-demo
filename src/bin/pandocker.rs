@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::{
-    body::{Body, Bytes},
+    body::Bytes,
     Extension,
     extract::BodyStream,
     http::header::{HeaderMap, HeaderName, HeaderValue},
@@ -100,7 +100,7 @@ fn authenticate(headers: &HeaderMap, auth: &str) -> bool {
 
 async fn handle(
     headers: HeaderMap,
-    mut body: Option<BodyStream>,
+    body: Option<BodyStream>,
     Extension(auth): Extension<Arc<String>>
 ) -> Response {
     if !authenticate(&headers, &auth.as_str()) {

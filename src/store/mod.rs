@@ -13,6 +13,7 @@ use tokio_postgres::{Client, NoTls};
 mod cal;
 mod courses;
 mod goals;
+mod reports;
 mod users;
 
 const DEFAULT_SALT_LENGTH: usize = 4;
@@ -127,6 +128,64 @@ static SCHEMA: &[(&str, &str, &str)] = &[
             score       TEXT
         )",
         "DROP TABLE goals",
+    ),
+
+    // Report writing extraness.
+    (
+        "SELECT FROM information_schema.tables WHERE table_name = 'nmr'",
+        "CREATE TABLE nmr (
+            id      BIGINT,
+            status  TEXT,   /* one of { NULL, 'M', 'R' }
+        )",
+        "DROP TABLE nmr",
+    ),
+    (
+        "SELECT FROM information_schema.tables WHERE table_name = 'facts'",
+        "CREATE TABLE facts (
+            uname   TEXT REFERENCES students(uname),
+            add     TEXT,
+            sub     TEXT,
+            mul     TEXT,
+            div     TEXT
+        )",
+        "DROP TABLE facts",
+    ),
+    (
+        "SELECT FROM information_schema.tables WHERE table_name = 'social'",
+        "CREATE TABLE social (
+            uname   TEXT REFERENCES students(uname),
+            term    TEXT,
+            trait   TEXT,
+            score   TEXT    /* 1- (worst) to 3+ (best) */
+        )",
+        "DROP TABLE social",
+    ),
+    (
+        "SELECT FROM information_schema.tables WHERE table_name = 'completion'",
+        "CREATE TABLE completion (
+            uname   TEXT REFERENCES students(uname),
+            term    TEXT,
+            courses TEXT
+        )",
+        "DROP TABLE completion",
+    ),
+    (
+        "SELECT FROM information_schema.tables WHERE table_name = 'drafts'",
+        "CREATE TABLE drafts (
+            uname   TEXT REFERENCES students(uname),
+            term    TEXT,
+            draft   TEXT
+        )",
+        "DROP TABLE drafts",
+    ),
+    (
+        "SELECT FROM information_schema.tables WHERE table_name = 'reports'",
+        "CREATE TABLE reports (
+            uname   TEXT REFERENCES students(uname),
+            term    TEXT,
+            doc     bytea
+        )",
+        "DROP TABLE reports",
     ),
 ];
 
