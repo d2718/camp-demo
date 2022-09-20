@@ -995,6 +995,114 @@ impl<'a> Glob {
         Ok(cals)
     }
 
+    pub async fn get_reports_archive_by_teacher(
+        &self,
+        tuname: &str
+    ) -> Result<Vec<u8>, UnifiedError> {
+        use std::io::Write;
+        use tokio_postgres::types::{ToSql, Type};
+        use zip::{CompressionMethod, write::FileOptions, ZipWriter};
+        log::trace!(
+            "Glob::get_reports_archive_by_teacher( {:?} ) called.",
+            tuname
+        );
+
+        /*
+        Okay, Praise Be To Cthulhu, this is disgusting.
+
+        First of all, the whole idea of this function is Not The Right Thing.
+        The Right Thing would have been to implement a function that returns an
+        async Stream of PDF files on the `Store` struct, and push this whole
+        encoding of a ZIP archive into the `inter::boss` module. But I don't
+        think I have the time and experience to learn how to do that in a
+        not-horribly-brittle way, so you have this, in a sort shove-one-half-
+        of-the-abstraction-down-a-layer-and-one-half-of-the-abstraction-up-
+        a-layer meeting-in-the-middle compromise of which I am not proud.
+
+        Also, the implementation itself is the kind of disgusting, labyrinthine
+        thing I find myself writing when trying to be asynchronously clever.
+        */
+
+        let stud_refs = self.get_students_by_teacher(tuname);
+        let params: Vec<[&(dyn ToSql + Sync); 1]> = stud_refs.iter()
+            .map(|u| match u {
+                User::Student(s) => Some(s),
+                _ => None,
+            }).filter(|s| s.is_some())
+            .map(|s| {
+                let p: [&(dyn ToSql + Sync); 1] = [&s.unwrap().base.uname];
+                p
+            }).collect();
+
+        if params.is_empty() {
+            return Err(format!(
+                "Teacher {:?} doesn't have any reports finalized.", tuname
+            ).into());
+        }
+        let file_buff: Vec<u8> = Vec::new();
+        let zip_opts = FileOptions::default()
+            .compression_method(CompressionMethod::Stored);
+        let mut zip = ZipWriter::new(std::io::Cursor::new(file_buff));
+        let data = self.data();
+        let reader = data.read().await;
+        let mut client = reader.connect().await?;
+        let t = client.transaction().await?;
+        let stmt = t.prepare_typed(
+            "SELECT doc FROM reports WHERE uname = $1", &[Type::TEXT]
+        ).await?;
+
+        let mut uname_n: usize = 0;
+        let mut fut = t.query_opt(&stmt, &params[uname_n]);
+        uname_n += 1;
+        while uname_n < params.len() {
+            if let Ok(Some(row)) = fut.await {
+                fut = t.query_opt(&stmt, &params[uname_n]);
+                if let Ok(doc) = row.try_get("doc") {
+                    zip.start_file(
+                        format!("{}.pdf", stud_refs[uname_n-1].uname()),
+                        zip_opts
+                    ).map_err(|e| format!(
+                        "Error starting write of {}.pdf to archive: {}",
+                        stud_refs[uname_n-1].uname(), &e
+                    ))?;
+                    if let Err(e) = zip.write(doc) {
+                        return Err(format!(
+                            "Error writing {}.pdf to archive: {}",
+                            stud_refs[uname_n-1].uname(), &e
+                        ).into());
+                    }
+                }
+            } else {
+                fut = t.query_opt(&stmt, &params[uname_n]);
+            }
+            uname_n += 1;
+        }
+        if let Ok(Some(row)) = fut.await {
+            if let Ok(doc) = row.try_get("doc") {
+                zip.start_file(
+                    format!("{}.pdf", stud_refs.last().unwrap().uname()),
+                    zip_opts
+                ).map_err(|e| format!(
+                    "Error starting write of {}.pdf to archive: {}",
+                    stud_refs[uname_n-1].uname(), &e
+                ))?;
+                if let Err(e) = zip.write(doc) {
+                    return Err(format!(
+                        "Error writing {}.pdf to archive: {}",
+                        stud_refs.last().unwrap().uname(), &e
+                    ).into());
+                }
+            }
+        }
+
+        match zip.finish() {
+            Ok(cursor) => Ok(cursor.into_inner()),
+            Err(e) => Err(format!(
+                "Error finalizing archive: {}", &e
+            ).into())
+        }
+    }
+
     /**
     Delete all Goals and Students.
 
