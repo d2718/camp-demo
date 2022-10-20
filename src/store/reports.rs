@@ -47,7 +47,6 @@ use futures::{
 };
 use tokio_postgres::{
     Row,
-    Statement,
     Transaction,
     types::{ToSql, Type},
 };
@@ -55,7 +54,6 @@ use tokio_postgres::{
 use super::{DbError, Store};
 use crate::{
     blank_string_means_none,
-    MiniString,
     pace::Term,
     report::*,
 };
@@ -80,7 +78,7 @@ impl Store {
 
         let update_statement = t.prepare_typed(
             "INSERT INTO nmr (id, status)
-                VALUES ($1, $2)\
+                VALUES ($1, $2)
                 ON CONFLICT ON CONSTRAINT nmr_pkey
                 DO UPDATE SET status = $2",
                 &[Type::INT8, Type::TEXT]
@@ -125,7 +123,7 @@ impl Store {
         log::trace!("Store::get_mastery( [ &T ], {:?} ) called.", uname);
 
         let rows = t.query(
-            "SELECT id, status FROM nmr
+            "SELECT goals.id, status FROM nmr
                 INNER JOIN goals ON nmr.id = goals.id
             WHERE goals.uname = $1",
             &[&uname]
@@ -171,6 +169,45 @@ impl Store {
                 Ok(FactSet::default())
             }
         }
+    }
+
+    pub async fn set_facts(
+        t: &Transaction<'_>,
+        uname: &str,
+        facts: &FactSet
+    ) -> Result<(), DbError> {
+        log::trace!("Store::set_facts( [ &T ], {:?}, {:?} ) called.", uname, facts);
+
+        let opt = t.query_opt(
+            "SELECT FROM facts WHERE uname = $1",
+            &[&uname]
+        ).await?;
+
+        let params: [&(dyn ToSql + Sync); 5] = [
+            &facts.add.as_str(), &facts.sub.as_str(),
+            &facts.mul.as_str(), &facts.div.as_str(),
+            &uname,
+        ];
+
+        match opt {
+            Some(_row) => {
+                t.execute(
+                    "UPDATE facts SET
+                        add = $1, sub = $2, mul = $3, div = $4
+                        WHERE uname = $5",
+                    &params
+                ).await?;
+            },
+            None => {
+                t.execute(
+                    "INSERT INTO facts (add, sub, mul, div, uname)
+                    VALUES ($1, $2, $3, $4, $5)",
+                    &params
+                ).await?;
+            },
+        }
+
+        Ok(())
     }
 
     pub async fn set_social(
@@ -305,6 +342,128 @@ impl Store {
         Ok(opt)
     }
 
+    pub async fn set_report_sidecar(
+        &self,
+        sidecar: &ReportSidecar
+    ) -> Result<(), DbError> {
+        log::trace!(
+            "Store::set_report_sidecar( {:?} ) called.", &sidecar.uname
+        );
+
+        let uname = &sidecar.uname;
+
+        let mut client = self.connect().await?;
+        let t = client.transaction().await?;
+
+        let fact_set = match &sidecar.facts {
+            Some(fs) => *fs,
+            None => FactSet::default(),
+        };
+
+        if let Err(e) = tokio::try_join!(
+            Store::set_facts(&t,uname, &fact_set),
+            Store::set_social(&t, uname, Term::Fall, &sidecar.fall_social),
+            Store::set_social(&t, uname, Term::Spring, &sidecar.spring_social),
+            Store::set_completion(&t, uname, Term::Fall, &sidecar.fall_complete),
+            Store::set_completion(&t, uname, Term::Spring, &sidecar.spring_complete),
+            Store::set_mastery(&t, &sidecar.mastery),
+        ) {
+            return Err(format!(
+                "Unable to write sidecar data to database: {}", &e
+            ).into());
+        }
+
+        t.commit().await.map_err(|e| e.into())
+    }
+
+    pub async fn get_report_sidecar(
+        &self,
+        uname: &str,
+    ) -> Result<ReportSidecar, DbError> {
+        log::trace!(
+            "Store::get_report_sidecar( {:?} ) called.", uname
+        );
+
+        let mut client = self.connect().await?;
+        let t = client.transaction().await?;
+/* 
+        let mut facts: Option<FactSet> = None;
+        let mut fall_social: Option<HashMap<String, String>> = None;
+        let mut spring_social: Option<HashMap<String, String>> = None;
+        let mut fall_complete: Option<String> = None;
+        let mut spring_complete: Option<String> = None;
+        let mut summer_complete: Option<String> = None;
+        let mut mastery: Option<Vec<Mastery>> = None;
+
+        loop {
+            tokio::select! {
+                res = Store::get_facts(&t, uname) => {
+                    facts = Some(res?);
+                },
+                res = Store::get_social(&t, uname, Term::Fall) => {
+                    fall_social = Some(res?);
+                },
+                res = Store::get_social(&t, uname, Term::Spring) => {
+                    spring_social = Some(res?);
+                },
+                res = Store::get_completion(&t, uname, Term::Fall) => {
+                    fall_complete = res?;
+                },
+                res = Store::get_completion(&t, uname, Term::Spring) => {
+                    spring_complete = res?;
+                },
+                res = Store::get_completion(&t, uname, Term::Summer) => {
+                    summer_complete = res?;
+                },
+                res = Store::get_mastery(&t, uname) => {
+                    mastery = Some(res?);
+                },
+                else => { break; }
+            }
+        } */
+
+        let (
+            facts,
+            fall_social, spring_social,
+            fall_complete, spring_complete, summer_complete,
+            mastery
+        ) = tokio::try_join!(
+            Store::get_facts(&t, uname),
+            Store::get_social(&t, uname, Term::Fall),
+            Store::get_social(&t, uname, Term::Spring),
+            Store::get_completion(&t, uname, Term::Fall),
+            Store::get_completion(&t, uname, Term::Spring),
+            Store::get_completion(&t, uname, Term::Summer),
+            Store::get_mastery(&t, uname),
+        )?;
+
+        t.commit().await?;
+
+/*         let fall_social = match fall_social {
+            Some(map) => map,
+            None => { return Err("No Fall Semester social/emotional goals.".into()); },
+        };
+        let spring_social = match spring_social {
+            Some(map) => map,
+            None => { return Err("No Spring Semester social/emotional goals.".into()); },
+        }; */
+        let fall_complete = fall_complete.unwrap_or_default();
+        let spring_complete = spring_complete.unwrap_or_default();
+/*         let mastery = match mastery {
+            Some(v) => v,
+            None => { return Err("No Mastery information.".into()); },
+        }; */
+
+        let car = ReportSidecar {
+            uname: uname.to_string(),
+            facts: Some(facts),
+            fall_social, spring_social, mastery,
+            fall_complete, spring_complete, summer_complete,
+        };
+
+        Ok(car)
+    }
+
     pub async fn set_draft(
         t: &Transaction<'_>,
         uname: &str,
@@ -425,5 +584,87 @@ impl Store {
         };
 
         Ok(opt)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serial_test::serial;
+
+    use super::*;
+
+    use crate::tests::ensure_logging;
+    use crate::UnifiedError;
+
+    static FAKEPROD: &str = "host=localhost user=camp_test password='camp_test' dbname=camp_store_fakeprod";
+    static UNAME: &str = "zmilk";
+    static SOCIAL_CATS: &[&str] = &[
+        "Class Participation",
+        "Leadership",
+        "Time Management",
+        "Behavior",
+        "Social Skills",
+        "Attention to Detail",
+        "Organization",
+        "Study Skills",
+    ];
+
+    fn social_map() -> HashMap<String, String> {
+        SOCIAL_CATS.iter()
+            .map(|cat| (String::from(*cat), format!("2")))
+            .collect()
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn read_sidecar() -> Result<(), UnifiedError> {
+        ensure_logging();
+
+        let db = Store::new(FAKEPROD.to_owned());
+        db.ensure_db_schema().await?;
+
+        let sc = db.get_report_sidecar(UNAME).await?;
+
+        log::info!("{:#?}", &sc);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn write_sidecar() -> Result<(), UnifiedError> {
+        ensure_logging();
+
+        let db = Store::new(FAKEPROD.to_owned());
+        db.ensure_db_schema().await;
+
+        let facts = FactSet {
+            add: FactStatus::Mastered,
+            sub: FactStatus::Mastered,
+            mul: FactStatus::Mastered,
+            div: FactStatus::Not,
+        };
+
+        let mastery = vec![
+            Mastery { id: 1, status: MasteryStatus::Retained, },
+            Mastery { id: 2, status: MasteryStatus::Not, },
+            Mastery { id: 3, status: MasteryStatus::Mastered, },
+            Mastery { id: 4, status: MasteryStatus::Retained, },
+        ];
+
+        let sc = ReportSidecar {
+            uname: UNAME.to_owned(),
+            facts: Some(facts),
+            fall_social: social_map(),
+            spring_social: social_map(),
+            fall_complete: "None".to_owned(),
+            spring_complete: "".to_owned(),
+            summer_complete: None,
+            mastery,
+        };
+
+        db.set_report_sidecar(&sc).await?;
+
+        Ok(())
     }
 }

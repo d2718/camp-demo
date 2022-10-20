@@ -89,6 +89,13 @@ impl std::convert::From<&str> for FactStatus {
     }
 }
 
+impl FactStatus {
+	pub fn as_str(&self) -> &'static str {
+		let s: &str = (*self).into();
+		s
+	}
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct FactSet {
     pub add: FactStatus,

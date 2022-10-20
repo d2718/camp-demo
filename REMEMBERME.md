@@ -22,7 +22,9 @@ the characters `&"<>`.~~
 
 ~~Widen "course symbol" input field in Admin's Edit Goal dialog.~~
 
-Needs a "nuke all the students" button.
+~~Needs a "nuke all the students" button.~~
 
-A single Academic Year should be able to contain days from multiple
-calendar "pages".
+~~A single Academic Year should be able to contain days from multiple
+calendar "pages".~~
+
+IDK, maybe something like [this](https://editorjs.io/)?

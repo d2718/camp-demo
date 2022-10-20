@@ -134,8 +134,8 @@ static SCHEMA: &[(&str, &str, &str)] = &[
     (
         "SELECT FROM information_schema.tables WHERE table_name = 'nmr'",
         "CREATE TABLE nmr (
-            id      BIGINT,
-            status  TEXT,   /* one of { NULL, 'M', 'R' }
+            id      BIGINT PRIMARY KEY REFERENCES goals(id),
+            status  TEXT    /* one of { NULL, 'M', 'R' } */
         )",
         "DROP TABLE nmr",
     ),
@@ -215,6 +215,12 @@ impl From<tokio_postgres::error::Error> for DbError {
             write!(&mut s, "; {}", dbe).unwrap();
         }
         DbError(s)
+    }
+}
+
+impl From<&str> for DbError {
+    fn from(s: &str) -> DbError {
+        DbError(String::from(s))
     }
 }
 
