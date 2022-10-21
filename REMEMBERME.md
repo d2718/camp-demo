@@ -28,3 +28,5 @@ the characters `&"<>`.~~
 calendar "pages".~~
 
 IDK, maybe something like [this](https://editorjs.io/)?
+
+Ensure deleting `Student` data deletes sidecar/report contents, too.

@@ -25,7 +25,7 @@ use rand::{distributions, Rng};
 use tokio_postgres::{types::Type, Client, NoTls, Transaction};
 
 // Defaults for [`Db`] key generation; new `Db`s will be instantiated with
-// these values, which can be changed later. 
+// these values, which can be changed later.
 const DEFAULT_KEY_LENGTH: usize = 32;
 const DEFAULT_KEY_CHARS: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const DEFAULT_KEY_LIFE_SECONDS: u64 = 20 * 60; // 20 minutes

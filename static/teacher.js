@@ -9,6 +9,7 @@ const DATA = {
     chapters: new Map(),
     paces: new Map(),
     goals: new Map(),
+    traits: [],
 };
 const DISPLAY = {
     course_list_div: document.getElementById("course-info"),
@@ -23,7 +24,13 @@ const DISPLAY = {
     seq_input: document.getElementById("edit-goal-seq"),
     goal_complete: document.getElementById("complete-goal"),
     goal_complete_meta: document.getElementById("complete-goal-meta"),
+    sidecar_edit: document.getElementById("edit-sidecar"),
 };
+const GOAL_MASTERY_OPTS = [
+    {val: "Not", text: "Not Mastered"},
+    {val: "Mastered", text: "Mastered"},
+    {val: "Retained", text: "Mastered & Retained"}
+];
 
 const NOW = new Date();
 
@@ -240,6 +247,11 @@ function make_calendar_footer(cal) {
     autobutt.setAttribute("data-uname", cal.uname);
     autobutt.addEventListener("click", autopace);
     last_div.appendChild(autobutt);
+    const sidecarbutt = document.createElement("button");
+    UTIL.label("report info", sidecarbutt);
+    sidecarbutt.setAttribute("data-uname", cal.uname);
+    sidecarbutt.addEventListener("click", edit_sidecar);
+    last_div.appendChild(sidecarbutt);
     const nuke = document.createElement("button");
     UTIL.label("clear all goals", nuke);
     nuke.setAttribute("data-uname", cal.uname);
@@ -657,6 +669,152 @@ function populate_dates(r) {
     .catch(log_numbered_error);
 }
 
+function populate_traits(r) {
+    r.json()
+    .then(j => {
+        console.log("populate-traits response:", j);
+
+        DATA.traits = j;
+        const cont = DISPLAY.sidecar_edit.querySelector("fieldset#trait-container");
+        let n = 0;
+        for(const trait of DATA.traits) {
+            const fid = `edit-sidecar-trait-${n}`;
+            const fipt = document.createElement("input");
+            fipt.setAttribute("data-trait", trait);
+            fipt.setAttribute("data-term", "fall");
+            fipt.id = fid;
+            const flab = document.createElement("label");
+            flab.setAttribute("for", fid);
+            flab.setAttribute("class", "r");
+            UTIL.set_text(flab, trait);
+            cont.appendChild(flab);
+            cont.appendChild(fipt);
+
+            n = n + 1;
+
+            const sid = `edit-sidecar-trait-${n}`;
+            const sipt = document.createElement("input");
+            sipt.setAttribute("data-trait", trait);
+            sipt.setAttribute("data-term", "spring");
+            sipt.id = sid;
+            const slab = document.createElement("label");
+            slab.setAttribute("for", sid);
+            slab.setAttribute("class", "l");
+            UTIL.set_text(slab, trait);
+            cont.appendChild(sipt);
+            cont.appendChild(slab);
+
+            n = n + 1;
+        }
+
+    })
+    .catch(log_numbered_error);
+}
+
+async function show_sidecar(r) {
+    let car = null;
+    await r.json().then(j => { car = j; })
+    .catch(e => {
+        log_numbered_error(e);
+        return;
+    });
+
+    const uname = car.uname;
+    const pace = DATA.paces.get(car.uname);
+    if(!pace) {
+        const err_txt = `No data for student "${uname}"`;
+        RQ.add_err(err_txt);
+        return;
+    }
+    const form = document.forms["edit-sidecar"];
+
+    form.elements["uname"].value = uname;
+
+    const name = `${pace.rest} ${pace.last}`;
+    UTIL.set_text(document.getElementById("edit-sidecar-meta"), name);
+
+    for(const [oper, val] of Object.entries(car.facts)) {
+        form.elements[oper].value = val;
+    }
+
+    const trait_inputs = form.querySelectorAll("input[data-trait]");
+    for(const ipt of trait_inputs) {
+        ipt.value = "";
+    }
+
+    for(const [trait, score] of Object.entries(car.fall_social)) {
+        const ipt = form.querySelector(`input[data-term="fall"][data-trait="${trait}"]`);
+        ipt.value = score;
+    }
+    for(const [trait, score] of Object.entries(car.spring_social)) {
+        const ipt = form.querySelector(`input[data-term="spring"][data-trait="${trait}"]`);
+        ipt.value = score;
+    }
+
+    form["complete-fall"].value = car.fall_complete;
+    form["complete-spring"].value = car.spring_complete;
+
+    const mastery_map = new Map();
+    for(const m of car.mastery) {
+        mastery_map.set(m.id, m.status);
+    }
+
+    const goal_rows = DISPLAY.sidecar_edit.querySelector("table#goal-mastery > tbody");
+    UTIL.clear(goal_rows);
+    for(const g of pace.goals) {
+        const tr = document.createElement("tr");
+        const course = DATA.courses.get(g.sym);
+        const chapt = DATA.chapters.get(course.chapters[g.seq]);
+        const ch_name = `${course.title} ${chapt.title}`;
+
+        let td = document.createElement("td");
+        UTIL.set_text(td, ch_name);
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        UTIL.set_text(td, g.due || "");
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        UTIL.set_text(td, g.done || "");
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        UTIL.set_text(td, score2pct(g.score || "") || "");
+        tr.appendChild(td);
+
+        const ipt = document.createElement("select");
+        ipt.setAttribute("data-id", g.id);
+        for(const o of GOAL_MASTERY_OPTS) {
+            let opt = document.createElement("option");
+            opt.setAttribute("value", o.val);
+            UTIL.set_text(opt, o.text);
+            ipt.appendChild(opt);
+        }
+        const status = mastery_map.get(g.id);
+        if(status) {
+            ipt.value = status;
+        } else if(g.done) {
+            ipt.value = "Mastered";
+        }
+        td = document.createElement("td");
+        td.appendChild(ipt);
+        tr.appendChild(td);
+
+        goal_rows.appendChild(tr);
+    }
+
+    DISPLAY.sidecar_edit.showModal();
+}
+
+document.getElementById("edit-sidecar-cancel")
+    .addEventListener("click", evt => {
+        evt.preventDefault();
+        DISPLAY.sidecar_edit.close();
+    });
+document.getElementById("edit-sidecar-confirm")
+    .addEventListener("click", save_sidecar);
+
 function field_response(r) {
     if(!r.ok) {
         r.text()
@@ -690,6 +848,12 @@ function field_response(r) {
         replace_pace(r);
     } else if(action == "populate-dates") {
         populate_dates(r);
+    } else if(action == "populate-traits") {
+        populate_traits(r);
+    } else if(action == "show-sidecar") {
+        show_sidecar(r);
+    } else if(action == "none") {
+        /* Don't do anything. This is a success that requires no action. */
     } else {
         const e_n = next_err();
         const err_txt = `Unrecognized x-camp-action header: "${action}". (See console error #${e_n}.)`;
@@ -729,6 +893,7 @@ function request_action(action, body, description) {
 UTIL.ensure_on_load(() => {
     request_action("populate-courses", "", "Fetching Course data.");
     request_action("populate-dates", "", "Fetching calendar events.");
+    request_action("populate-traits", "", "Fetching list of social/emotional traits.");
 });
 
 document.getElementById("course-info-show")
@@ -1063,4 +1228,61 @@ async function clear_goals(evt) {
     if(await are_you_sure(q)) {
         request_action("clear-goals", uname, `Clearing goals for ${cal.rest} ${cal.last}.`);
     }
+}
+
+function edit_sidecar(evt) {
+    evt.preventDefault();
+    const uname = this.getAttribute("data-uname");
+    const cal = DATA.paces.get(uname);
+    request_action("show-sidecar", uname, `Fetching report data sidecar for ${cal.rest} ${cal.last}`);
+}
+
+function save_sidecar(evt) {
+    evt.preventDefault();
+    const form = document.forms["edit-sidecar"];
+    const data = new FormData(form);
+    const uname = data.get("uname");
+
+    const sc = { "uname": uname };
+
+    const fact_fieldset = form.querySelector("fieldset#fact-mastery-container");
+    const facts_inputs = fact_fieldset.querySelectorAll("select");
+    const facts = {};
+    for(const ipt of facts_inputs) {
+        facts[ipt.name] = ipt.value;
+    }
+    sc["facts"] = facts;
+
+    let trait_fieldset = form.querySelector("fieldset#trait-container");
+    for(const term of ["fall", "spring"]) {
+        const trait_inputs = trait_fieldset.querySelectorAll(`input[data-term="${term}"]`);
+        const social = {};
+        for(const ipt of trait_inputs) {
+            social[ipt.getAttribute("data-trait")] = ipt.value;
+        }
+        const name = `${term}_social`;
+        sc[name] = social;
+    }
+
+    sc["fall_complete"] = form["complete-fall"].value.trim();
+    sc["spring_complete"] = form["complete-spring"].value.trim();
+    sc["summer_complete"] = form["complete-summer"].value.trim();
+
+    let mastery_fieldset = form.querySelector("fieldset#goal-mastery-container");
+    let mastery_inputs = mastery_fieldset.querySelectorAll("select");
+    let mastery = Array.from(mastery_inputs).map(ipt => {
+        const goal_id = Number(ipt.getAttribute("data-id"))
+        const g = DATA.goals.get(goal_id);
+        if(g.done) {
+            return { "id": goal_id, "status": ipt.value };
+        } else {
+            return null;
+        }
+    }).filter(x => Boolean(x));
+    sc["mastery"] = mastery;
+
+    const p = DATA.paces.get(uname);
+    const msg = `Saving report data sidecar for ${p.rest} ${p.last}.`;
+    DISPLAY.sidecar_edit.close();
+    request_action("update-sidecar", sc, msg);
 }

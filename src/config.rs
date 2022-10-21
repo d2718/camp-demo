@@ -122,6 +122,8 @@ pub struct ConfigFile {
     /// Value of the `Authorization` header required in a Sendgrid request in
     /// order to send email.
     pub sendgrid_auth_string: String,
+    /// List of social/emotional/behavioral goals included in reports.
+    pub social_traits: Option<Vec<String>>,
     /// Host to bind the TCP listening socket to.
     pub host: Option<String>,
     /// Port to bind the TCP listening socket to.
@@ -130,10 +132,6 @@ pub struct ConfigFile {
     pub port: Option<u16>,
     /// Directory with [`handlebars`] templates.
     pub templates_dir: Option<String>,
-    /*
-    pub students_per_teacher: Option<usize>,
-    pub goals_per_student: Option<usize>,
-    */
 }
 
 /**
@@ -150,6 +148,7 @@ pub struct Cfg {
     pub default_admin_password: String,
     pub default_admin_email: String,
     pub sendgrid_auth_string: String,
+    pub social_traits: Vec<String>,
     pub addr: SocketAddr,
     pub templates_dir: PathBuf,
     /*
@@ -172,12 +171,18 @@ impl std::default::Default for Cfg {
             default_admin_password: "toot".to_owned(),
             default_admin_email: "admin@camp.not.an.address".to_owned(),
             sendgrid_auth_string: "".to_owned(),
+            social_traits: vec![
+                "Class Participation".to_owned(),
+                "Leadership".to_owned(),
+                "Time Management".to_owned(),
+                "Behavior".to_owned(),
+                "Social Skills".to_owned(),
+                "Attention to Detail".to_owned(),
+                "Organization".to_owned(),
+                "Study Skills".to_owned(),
+            ],
             addr: SocketAddr::new("0.0.0.0".parse().unwrap(), 8001),
             templates_dir: PathBuf::from("templates/"),
-            /*
-            students_per_teacher: 60,
-            goals_per_student: 16,
-            */
         }
     }
 }
@@ -211,6 +216,9 @@ impl Cfg {
         }
         if let Some(s) = cf.admin_email {
             c.default_admin_email = s;
+        }
+        if let Some(v) = cf.social_traits {
+            c.social_traits = v;
         }
         if let Some(s) = cf.host {
             c.addr.set_ip(
@@ -271,11 +279,8 @@ pub struct Glob {
     pub course_syms: HashMap<String, i64>,
     pub users: HashMap<String, User>,
     pub addr: SocketAddr,
-    /*
-    pub goals_per_student: usize,
-    pub students_per_teacher: usize,
-    */
     pub pwd_chars: Vec<char>,
+    pub social_traits: Vec<String>,
 }
 
 impl<'a> Glob {
@@ -997,11 +1002,11 @@ impl<'a> Glob {
 
     pub async fn get_reports_archive_by_teacher(
         &self,
-        tuname: &str
+        tuname: &str,
     ) -> Result<Vec<u8>, UnifiedError> {
         use std::io::Write;
         use tokio_postgres::types::{ToSql, Type};
-        use zip::{CompressionMethod, write::FileOptions, ZipWriter};
+        use zip::{write::FileOptions, CompressionMethod, ZipWriter};
         log::trace!(
             "Glob::get_reports_archive_by_teacher( {:?} ) called.",
             tuname
@@ -1024,32 +1029,32 @@ impl<'a> Glob {
         */
 
         let stud_refs = self.get_students_by_teacher(tuname);
-        let params: Vec<[&(dyn ToSql + Sync); 1]> = stud_refs.iter()
+        let params: Vec<[&(dyn ToSql + Sync); 1]> = stud_refs
+            .iter()
             .map(|u| match u {
                 User::Student(s) => Some(s),
                 _ => None,
-            }).filter(|s| s.is_some())
+            })
+            .filter(|s| s.is_some())
             .map(|s| {
                 let p: [&(dyn ToSql + Sync); 1] = [&s.unwrap().base.uname];
                 p
-            }).collect();
+            })
+            .collect();
 
         if params.is_empty() {
-            return Err(format!(
-                "Teacher {:?} doesn't have any reports finalized.", tuname
-            ).into());
+            return Err(format!("Teacher {:?} doesn't have any reports finalized.", tuname).into());
         }
         let file_buff: Vec<u8> = Vec::new();
-        let zip_opts = FileOptions::default()
-            .compression_method(CompressionMethod::Stored);
+        let zip_opts = FileOptions::default().compression_method(CompressionMethod::Stored);
         let mut zip = ZipWriter::new(std::io::Cursor::new(file_buff));
         let data = self.data();
         let reader = data.read().await;
         let mut client = reader.connect().await?;
         let t = client.transaction().await?;
-        let stmt = t.prepare_typed(
-            "SELECT doc FROM reports WHERE uname = $1", &[Type::TEXT]
-        ).await?;
+        let stmt = t
+            .prepare_typed("SELECT doc FROM reports WHERE uname = $1", &[Type::TEXT])
+            .await?;
 
         let mut uname_n: usize = 0;
         let mut fut = t.query_opt(&stmt, &params[uname_n]);
@@ -1058,18 +1063,21 @@ impl<'a> Glob {
             if let Ok(Some(row)) = fut.await {
                 fut = t.query_opt(&stmt, &params[uname_n]);
                 if let Ok(doc) = row.try_get("doc") {
-                    zip.start_file(
-                        format!("{}.pdf", stud_refs[uname_n-1].uname()),
-                        zip_opts
-                    ).map_err(|e| format!(
-                        "Error starting write of {}.pdf to archive: {}",
-                        stud_refs[uname_n-1].uname(), &e
-                    ))?;
+                    zip.start_file(format!("{}.pdf", stud_refs[uname_n - 1].uname()), zip_opts)
+                        .map_err(|e| {
+                            format!(
+                                "Error starting write of {}.pdf to archive: {}",
+                                stud_refs[uname_n - 1].uname(),
+                                &e
+                            )
+                        })?;
                     if let Err(e) = zip.write(doc) {
                         return Err(format!(
                             "Error writing {}.pdf to archive: {}",
-                            stud_refs[uname_n-1].uname(), &e
-                        ).into());
+                            stud_refs[uname_n - 1].uname(),
+                            &e
+                        )
+                        .into());
                     }
                 }
             } else {
@@ -1081,25 +1089,29 @@ impl<'a> Glob {
             if let Ok(doc) = row.try_get("doc") {
                 zip.start_file(
                     format!("{}.pdf", stud_refs.last().unwrap().uname()),
-                    zip_opts
-                ).map_err(|e| format!(
-                    "Error starting write of {}.pdf to archive: {}",
-                    stud_refs[uname_n-1].uname(), &e
-                ))?;
+                    zip_opts,
+                )
+                .map_err(|e| {
+                    format!(
+                        "Error starting write of {}.pdf to archive: {}",
+                        stud_refs[uname_n - 1].uname(),
+                        &e
+                    )
+                })?;
                 if let Err(e) = zip.write(doc) {
                     return Err(format!(
                         "Error writing {}.pdf to archive: {}",
-                        stud_refs.last().unwrap().uname(), &e
-                    ).into());
+                        stud_refs.last().unwrap().uname(),
+                        &e
+                    )
+                    .into());
                 }
             }
         }
 
         match zip.finish() {
             Ok(cursor) => Ok(cursor.into_inner()),
-            Err(e) => Err(format!(
-                "Error finalizing archive: {}", &e
-            ).into())
+            Err(e) => Err(format!("Error finalizing archive: {}", &e).into()),
         }
     }
 
@@ -1289,11 +1301,8 @@ pub async fn load_configuration<P: AsRef<Path>>(path: P) -> Result<Glob, Unified
         course_syms: HashMap::new(),
         users: HashMap::new(),
         addr: cfg.addr,
-        /*
-        goals_per_student: cfg.goals_per_student,
-        students_per_teacher: cfg.students_per_teacher,
-        */
         pwd_chars: DEFAULT_PASSWORD_CHARS.chars().collect(),
+        social_traits: cfg.social_traits,
     };
 
     glob.refresh_courses().await?;

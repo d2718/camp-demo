@@ -129,7 +129,7 @@ off
 
 Any other value will be interpreted as `LevelFilter::Warn`.
 
-*/ 
+*/
 #[cfg(unix)]
 pub fn log_level_from_env() -> simplelog::LevelFilter {
     use simplelog::LevelFilter;

@@ -11,20 +11,16 @@ use std::time::Duration;
 
 use axum::{
     body::Bytes,
-    Extension,
     extract::BodyStream,
     http::header::{HeaderMap, HeaderName, HeaderValue},
     http::status::StatusCode,
     response::{IntoResponse, Response},
-    Router,
     routing::post,
+    Extension, Router,
 };
 use futures::{Stream, StreamExt};
 use serde::Deserialize;
-use tokio::{
-    io::AsyncWriteExt,
-    process::Command,
-};
+use tokio::{io::AsyncWriteExt, process::Command};
 
 static CFG_FILE: &str = "pandocker.toml";
 static DEFAULT_AUTH: &str = "1010101-frogsfrogsfrogs";
@@ -46,7 +42,7 @@ of conversion pandoc will make.
 async fn render(
     source: Vec<u8>,
     from_fmt: Option<&str>,
-    to_fmt: Option<&str>
+    to_fmt: Option<&str>,
 ) -> Result<Vec<u8>, String> {
     let from_opt = match from_fmt {
         Some(fmt) => fmt,
@@ -61,25 +57,27 @@ async fn render(
         .args(["-f", from_opt, "-t", to_opt])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .spawn().map_err(|e| format!(
-            "Error spawning pandoc process: {}", &e
-        ))?;
+        .spawn()
+        .map_err(|e| format!("Error spawning pandoc process: {}", &e))?;
 
     {
-        let mut stdin = child.stdin.take().ok_or(
-            "Unable to get a handle on subprocess's stdin.".to_owned()
-        )?;
-        stdin.write(&source).await.map_err(|e| format!(
-            "Error writing to stdin of pandoc process: {}", &e
-        ))?;
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or("Unable to get a handle on subprocess's stdin.".to_owned())?;
+        stdin
+            .write(&source)
+            .await
+            .map_err(|e| format!("Error writing to stdin of pandoc process: {}", &e))?;
 
         // We have intentionally scoped this block so that the subprocess's
         // stdin handle drops here, signalling EOF to the pandoc subprocess.
     }
 
-    let output = child.wait_with_output().await.map_err(|e| format!(
-        "Error getting output from pandoc process: {}", &e
-    ))?;
+    let output = child
+        .wait_with_output()
+        .await
+        .map_err(|e| format!("Error getting output from pandoc process: {}", &e))?;
 
     if output.status.success() {
         Ok(output.stdout)
@@ -101,14 +99,15 @@ fn authenticate(headers: &HeaderMap, auth: &str) -> bool {
 async fn handle(
     headers: HeaderMap,
     body: Option<BodyStream>,
-    Extension(auth): Extension<Arc<String>>
+    Extension(auth): Extension<Arc<String>>,
 ) -> Response {
     if !authenticate(&headers, &auth.as_str()) {
         tokio::time::sleep(AUTH_FAIL_WAIT).await;
         return (
             StatusCode::UNAUTHORIZED,
-            "Invalid \"authorization:\" header value.".to_owned()
-        ).into_response();
+            "Invalid \"authorization:\" header value.".to_owned(),
+        )
+            .into_response();
     }
 
     let mut from_fmt: Option<&str> = None;
@@ -126,10 +125,13 @@ async fn handle(
     }
 
     let mut body = match body {
-        None => { return (
-            StatusCode::BAD_REQUEST,
-            "Request requires a source document body.".to_owned()
-        ).into_response(); },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                "Request requires a source document body.".to_owned(),
+            )
+                .into_response();
+        }
         Some(body) => body,
     };
 
@@ -143,13 +145,14 @@ async fn handle(
         match chunk {
             Ok(bytes) => {
                 source_buff.extend_from_slice(&bytes.slice(..));
-            },
+            }
             Err(e) => {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     format!("Error reading body: {}", &e),
-                ).into_response();
-            },
+                )
+                    .into_response();
+            }
         }
     }
 
@@ -158,35 +161,26 @@ async fn handle(
             StatusCode::OK,
             [(
                 HeaderName::from_static("content-type"),
-                HeaderValue::from_static("application/pdf")
+                HeaderValue::from_static("application/pdf"),
             )],
-            Bytes::from(bytes)
-        ).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            e
-        ).into_response(),
+            Bytes::from(bytes),
+        )
+            .into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e).into_response(),
     }
 }
 
-#[tokio::main(flavor="current_thread")]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), String> {
     let cfg = {
         let cfg_str = std::fs::read_to_string(CFG_FILE)
-            .map_err(|e| format!(
-                "Unable to read config file {:?}: {}",
-                CFG_FILE, &e
-            ))?;
-        let cfg: Cfg = toml::from_str(&cfg_str).map_err(|e| format!(
-            "Unable to parse config file {:?}: {}",
-            CFG_FILE, &e
-        ))?;
+            .map_err(|e| format!("Unable to read config file {:?}: {}", CFG_FILE, &e))?;
+        let cfg: Cfg = toml::from_str(&cfg_str)
+            .map_err(|e| format!("Unable to parse config file {:?}: {}", CFG_FILE, &e))?;
         cfg
     };
     let port_str = std::env::var("PORT").unwrap_or("".to_string());
-    let port: u16 = port_str.parse().unwrap_or(
-        cfg.port.unwrap_or(80)
-    );
+    let port: u16 = port_str.parse().unwrap_or(cfg.port.unwrap_or(80));
     let auth_str = cfg.auth.unwrap_or(DEFAULT_AUTH.to_owned());
     println!("Listening on port {}\nwith auth str {:?}", port, &auth_str);
 
@@ -196,11 +190,11 @@ async fn main() -> Result<(), String> {
     let app = Router::new()
         .route("/", post(handle))
         .layer(Extension(auth.clone()));
-    
+
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
-    
+
     Ok(())
 }

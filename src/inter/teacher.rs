@@ -20,6 +20,7 @@ use crate::{
     config::Glob,
     course::Course,
     pace::{maybe_parse_score_str, BookCh, Goal, Pace, Source},
+    report::ReportSidecar,
     user::*,
     DATE_FMT,
 };
@@ -83,7 +84,7 @@ pub async fn login(t: Teacher, form: LoginData, glob: Arc<RwLock<Glob>>) -> Resp
     let data = json!({
         "uname": &t.base.uname,
         "key": &auth_key,
-        "name": &t.name
+        "name": &t.name,
     });
 
     serve_template(StatusCode::OK, "teacher", &data, vec![])
@@ -156,6 +157,7 @@ pub async fn api(
         "populate-dates" => populate_dates(glob.clone()).await,
         "populate-courses" => populate_courses(glob.clone()).await,
         "populate-goals" => populate_goals(&headers, glob.clone()).await,
+        "populate-traits" => populate_traits(glob.clone()).await,
         "add-goal" => insert_goal(body, glob.clone()).await,
         "update-goal" => update_goal(body, glob.clone()).await,
         "delete-goal" => delete_goal(body, glob.clone()).await,
@@ -163,6 +165,8 @@ pub async fn api(
         "autopace" => autopace(body, glob.clone()).await,
         "clear-goals" => clear_goals(body, glob.clone()).await,
         "upload-goals" => upload_goals(&headers, body, glob.clone()).await,
+        "show-sidecar" => show_sidecar(&headers, body, glob.clone()).await,
+        "update-sidecar" => update_sidecar(&headers, body, glob.clone()).await,
         x => respond_bad_request(format!("{:?} is not a recognized x-camp-action value.", &x)),
     }
 }
@@ -484,6 +488,20 @@ async fn populate_goals(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Respons
             HeaderValue::from_static("populate-goals"),
         )],
         Json(pace_data),
+    )
+        .into_response()
+}
+
+async fn populate_traits(glob: Arc<RwLock<Glob>>) -> Response {
+    let glob = glob.read().await;
+
+    (
+        StatusCode::OK,
+        [(
+            HeaderName::from_static("x-camp-action"),
+            HeaderValue::from_static("populate-traits"),
+        )],
+        Json(&glob.social_traits),
     )
         .into_response()
 }
@@ -954,4 +972,152 @@ async fn upload_goals(
     }
 
     populate_goals(headers, glob).await
+}
+
+async fn show_sidecar(
+    headers: &HeaderMap,
+    body: Option<String>,
+    glob: Arc<RwLock<Glob>>,
+) -> Response {
+    let body = match body {
+        Some(body) => body,
+        None => {
+            return respond_bad_request("Request needs student user name in body.".to_owned());
+        }
+    };
+
+    let uname = &body;
+
+    let tuname: &str = match headers.get("x-camp-uname") {
+        Some(uname) => match uname.to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                return text_500(None);
+            }
+        },
+        None => {
+            return text_500(None);
+        }
+    };
+
+    let glob = glob.read().await;
+
+    match glob.users.get(uname) {
+        Some(User::Student(s)) => {
+            if &s.teacher != tuname {
+                let estr = format!("The student {:?} is not yours.", uname);
+                return (StatusCode::FORBIDDEN, estr).into_response();
+            }
+        }
+        _ => {
+            let estr = format!(
+                "The uname {:?} does not belong to a student in the system.",
+                uname
+            );
+            return respond_bad_request(estr);
+        }
+    }
+
+    let data_guard = glob.data();
+    let data = data_guard.read().await;
+
+    let sidecar = match data.get_report_sidecar(uname).await {
+        Ok(sc) => sc,
+        Err(e) => {
+            log::error!("Error fetching sidecar for student {:?}: {}", uname, &e);
+            return text_500(Some(format!(
+                "Error fetching extra reporting information for {:?}: {}",
+                uname, &e
+            )));
+        }
+    };
+
+    (
+        StatusCode::OK,
+        [(
+            HeaderName::from_static("x-camp-action"),
+            HeaderValue::from_static("show-sidecar"),
+        )],
+        Json(sidecar),
+    )
+        .into_response()
+}
+
+async fn update_sidecar(
+    headers: &HeaderMap,
+    body: Option<String>,
+    glob: Arc<RwLock<Glob>>,
+) -> Response {
+    let body = match body {
+        Some(body) => body,
+        None => {
+            return respond_bad_request(
+                "Request needs application/json body with ReportSidecar details.".to_owned(),
+            );
+        }
+    };
+
+    let sidecar: ReportSidecar = match serde_json::from_str(&body) {
+        Ok(sc) => sc,
+        Err(e) => {
+            log::error!(
+                "Unable to deserialize as ReportSidecar: {}; data:\n{}",
+                &e,
+                &body
+            );
+            let estr = format!(
+                "Request body did not deserialize into ReportSidecar: {}",
+                &e
+            );
+            return respond_bad_request(estr);
+        }
+    };
+
+    let tuname: &str = match headers.get("x-camp-uname") {
+        Some(uname) => match uname.to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                return text_500(None);
+            }
+        },
+        None => {
+            return text_500(None);
+        }
+    };
+
+    let glob = glob.read().await;
+
+    match glob.users.get(&sidecar.uname) {
+        Some(User::Student(s)) => {
+            if &s.teacher != tuname {
+                let estr = format!("The student {:?} is not yours.", &sidecar.uname);
+                return (StatusCode::FORBIDDEN, estr).into_response();
+            }
+        }
+        _ => {
+            let estr = format!(
+                "The uname {:?} does not belong to a student in the system.",
+                &sidecar.uname
+            );
+            return respond_bad_request(estr);
+        }
+    }
+
+    let data_guard = glob.data();
+    let data = data_guard.read().await;
+
+    if let Err(e) = data.set_report_sidecar(&sidecar).await {
+        log::error!("Error setting report sidecar: {}\ndata: {:?}", &e, &sidecar);
+        let estr = format!("Error saving report sidecar info: {}", &e);
+        return text_500(Some(estr));
+    }
+
+    (
+        StatusCode::OK,
+        [(
+            HeaderName::from_static("x-camp-action"),
+            HeaderValue::from_static("none"),
+        )],
+    )
+        .into_response()
 }

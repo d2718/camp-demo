@@ -72,7 +72,7 @@ pub struct BaseUser {
 impl BaseUser {
     /**
     Assign the `BaseUser` the given `Role`.
-    
+
     This can be necessary when deserializing or wrapping data from a source
     that doesn't explicitly have this information, but the `Role` is known
     in context (such as the various `BaseUser::into_xxx()` methods).
@@ -252,9 +252,9 @@ impl Student {
       4. student email address (`Student.base.email` field)
       5. parent email address (`Student.parent` field)
       6. student's teacher's uname (`Student.teacher` field)
-    
+
     Blank lines and lines beginning with `#` are ignored.
-    
+
     An example row:
 
     ```csv

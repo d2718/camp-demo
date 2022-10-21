@@ -1,15 +1,12 @@
 /*!
 Internal representations and containers for data only necessary for
-report-writing season. 
+report-writing season.
 */
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    blank_string_means_none,
-    pace::Term,
-};
+use crate::{blank_string_means_none, pace::Term};
 
 /// Represents the "mastery" status of a Goal in a report.
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -27,7 +24,7 @@ impl MasteryStatus {
             MasteryStatus::Retained => Some("R"),
         }
     }
-    
+
     pub fn as_str(&self) -> &'static str {
         match self {
             MasteryStatus::Not => "Not Mastered",
@@ -90,10 +87,10 @@ impl std::convert::From<&str> for FactStatus {
 }
 
 impl FactStatus {
-	pub fn as_str(&self) -> &'static str {
-		let s: &str = (*self).into();
-		s
-	}
+    pub fn as_str(&self) -> &'static str {
+        let s: &str = (*self).into();
+        s
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -107,7 +104,12 @@ pub struct FactSet {
 impl std::default::Default for FactSet {
     fn default() -> Self {
         use FactStatus::*;
-        FactSet { add: Not, sub: Not, mul: Not, div: Not }
+        FactSet {
+            add: Not,
+            sub: Not,
+            mul: Not,
+            div: Not,
+        }
     }
 }
 

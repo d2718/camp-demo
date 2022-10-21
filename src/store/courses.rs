@@ -208,7 +208,7 @@ impl Store {
 
     /**
     Delete the chapter with the given `id` from the database.
-    
+
     This will fail if there are still any [`Goal`](crate::pace::Goal)s that
     use this chatper, and the error message will probably be inexplicable to
     the user. This function is therefore guarded by

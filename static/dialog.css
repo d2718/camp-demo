@@ -6,6 +6,7 @@ dialog.edit {
     left: calc(100vw - 1em);
     transform: translate(-100%, 0);
 
+    overflow: scroll;
     min-width: 50ex;
     background-color: #eee;
     border: 1ex solid #888;

@@ -129,7 +129,6 @@ static SCHEMA: &[(&str, &str, &str)] = &[
         )",
         "DROP TABLE goals",
     ),
-
     // Report writing extraness.
     (
         "SELECT FROM information_schema.tables WHERE table_name = 'nmr'",

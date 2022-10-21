@@ -138,6 +138,78 @@ const AUTH = {
             </div>
         </dialog>
 
+        <dialog id="edit-sidecar" class="edit">
+            <h1>Report Details</h1>
+            <p id="edit-sidecar-meta"></p>
+            <form name="edit-sidecar" method="dialog">
+                <h3>Fact Mastery</h3>
+                <fieldset id="fact-mastery-container">
+                    <label for="edit-sidecar-add" class="r">Addition</label>
+                    <select name="add" id="edit-sidecar-add" class="l" required>
+                        <option value="Mastered">Mastered</option>
+                        <option value="Not">Not Mastered</option>
+                        <option value="Ex">Excused</option>
+                    </select>
+                    <select name="sub" id="edit-sidecar-sub" class="r" required>
+                        <option value="Mastered">Mastered</option>
+                        <option value="Not">Not Mastered</option>
+                        <option value="Ex">Excused</option>
+                    </select>
+                    <label for="edit-sidecar-sub" class="l">Subtraction</label>
+                    <label for="edit-sidecar-mul" class="r">Multiplication</label>
+                    <select name="mul" id="edit-sidecar-mul" class="l" required>
+                        <option value="Mastered">Mastered</option>
+                        <option value="Not">Not Mastered</option>
+                        <option value="Ex">Excused</option>
+                    </select>
+                    <select name="div" id="edit-sidecar-div" class="r" required>
+                        <option value="Mastered">Mastered</option>
+                        <option value="Not">Not Mastered</option>
+                        <option value="Ex">Excused</option>
+                    </select>
+                    <label for="edit-sidecar-div" class="l">Division</label>
+                </fieldset>
+
+                <h3>Goal Mastery</h3>
+                <fieldset id="goal-mastery-container">
+                    <table id="goal-mastery">
+                        <thead>
+                            <tr>
+                                <th>chapter</th>
+                                <th>due</th>
+                                <th>done</th>
+                                <th>score</th>
+                                <th>mastery</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </fieldset>
+
+                <h3>Course Completion</h3>
+                <h4>Course(s) Completed Fall</h4><h4>Course(s) Completed Spring</h4>
+                <input name="complete-fall" id="edit-sidecar-complete-fall" class="double">
+                <input name="complete-spring" id="edit-sidecar-complete-spring" class="double">
+                <h4>Course(s) Completed Summer</h4><span class="double"></span>
+                <input name="complete-summer" id="edit-sidecar-complete-summer" class="double">
+                <span class="double"></span>
+
+                <h3>Social/Emotional/Behavioral</h3>
+                <h4>Fall</h4><h4>Spring</h4>
+                <fieldset id="trait-container"></fieldset>
+
+                <button id="edit-sidecar-cancel" class="double">
+                    <label class="cancel">dismiss</label>
+                </button>
+                <button id="edit-sidecar-confirm" class="double">
+                    <label class="confirm">save</label>
+                </button>
+                
+                <input type="hidden" name="uname">
+            </form>
+        </dialog>
+
         <dialog id="are-you-sure">
             <h1>&iquest;Are you sure?</h1>
             <p id="are-you-sure-message"></p>

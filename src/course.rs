@@ -188,7 +188,7 @@ pub struct Chapter {
 impl Chapter {
     /// Attempts to create a `Chapter` from the info in a line of CSV data.
     ///
-    /// Called by [`Course::from_reader`] when reading the CSV Chapter part. 
+    /// Called by [`Course::from_reader`] when reading the CSV Chapter part.
     pub fn from_csv_line(line: &csv::StringRecord) -> Result<Chapter, String> {
         log::trace!("Chapter::from_csv_line( {:?} ) called.", line);
 

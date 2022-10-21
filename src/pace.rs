@@ -171,7 +171,7 @@ pub struct Goal {
     pub id: i64,
     /// `uname` of Student to whom this `Goal` is assigned.
     pub uname: String,
-    /// Source of the material. 
+    /// Source of the material.
     pub source: Source,
     /// Whether the material in question is review.
     pub review: bool,
@@ -344,17 +344,15 @@ impl Goal {
                     return Err(format!("Unable to parse {:?} as day number.", s));
                 }
             },
-            None => {
-                match prev {
-                    Some(g) => match g.due {
-                        Some(d) => d.day(),
-                        None => {
-                            return Err("No day".into());
-                        }
-                    },
+            None => match prev {
+                Some(g) => match g.due {
+                    Some(d) => d.day(),
                     None => {
                         return Err("No day".into());
-                    },
+                    }
+                },
+                None => {
+                    return Err("No day".into());
                 }
             },
         };
@@ -959,7 +957,9 @@ fn generate_summary(
         Term::Spring => "Spring Test Average",
         // This shouldn't be called for the Summer term, so just return an
         // empty Vec of rows.
-        Term::Summer => { return Ok(lines); }
+        Term::Summer => {
+            return Ok(lines);
+        }
     };
     let mut value: MiniString<MEDSTORE> = MiniString::new();
     write!(&mut value, "{}", &int_score)
