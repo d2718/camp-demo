@@ -17,8 +17,10 @@ pub mod report;
 pub mod store;
 pub mod user;
 
+#[allow(clippy::upper_case_acronyms)]
 /// 16-byte backing store for `SmallString`s or `MiniString`s.
 type SMALLSTORE = [u8; 16];
+#[allow(clippy::upper_case_acronyms)]
 /// 32-byte backing store for `SmallString`s or `MiniString`s.
 type MEDSTORE = [u8; 32];
 //type BIGSTORE = [u8; 64];
@@ -80,6 +82,8 @@ impl Display for UnifiedError {
         }
     }
 }
+
+impl std::error::Error for UnifiedError {}
 
 /**
 This function is used for reading data from CSV files (and sometimes SQL
@@ -227,6 +231,23 @@ impl<A: smallvec::Array<Item = u8>> From<&str> for MiniString<A> {
     fn from(s: &str) -> MiniString<A> {
         let ss: SmallString<A> = SmallString::from_str(s);
         MiniString(ss)
+    }
+}
+
+pub fn format_date(format: &[FormatItem], date: &Date) -> Result<MiniString<SMALLSTORE>, String> {
+    let mut s: MiniString<SMALLSTORE> = MiniString::new();
+    date.format_into(&mut s, format)
+        .map_err(|e| format!("Failed to format date {:?}: {}", date, &e))?;
+    Ok(s)
+}
+
+pub fn format_maybe_date(
+    format: &[FormatItem],
+    maybe_date: &Option<Date>,
+) -> Result<MiniString<SMALLSTORE>, String> {
+    match maybe_date {
+        Some(d) => format_date(format, d),
+        None => Ok(MiniString::new()),
     }
 }
 

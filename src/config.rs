@@ -132,6 +132,13 @@ pub struct ConfigFile {
     pub port: Option<u16>,
     /// Directory with [`handlebars`] templates.
     pub templates_dir: Option<String>,
+    /// URI for making Pandoc requests to render report markdown into PDFs.
+    pub pandoc_uri: Option<String>,
+    /// Authorization token for the Pandoc API endpoint.
+    pub pandoc_auth: Option<String>,
+    /// "From" format for Pandoc requests. This is largely for experimenting
+    /// with different extensions.
+    pub pandoc_format: Option<String>,
 }
 
 /**
@@ -151,10 +158,9 @@ pub struct Cfg {
     pub social_traits: Vec<String>,
     pub addr: SocketAddr,
     pub templates_dir: PathBuf,
-    /*
-    pub students_per_teacher: usize,
-    pub goals_per_student: usize,
-    */
+    pub pandoc_uri: hyper::Uri,
+    pub pandoc_auth: String,
+    pub pandoc_format: Option<String>,
 }
 
 impl std::default::Default for Cfg {
@@ -183,6 +189,9 @@ impl std::default::Default for Cfg {
             ],
             addr: SocketAddr::new("0.0.0.0".parse().unwrap(), 8001),
             templates_dir: PathBuf::from("templates/"),
+            pandoc_uri: "http://localhost:8002/".parse().unwrap(),
+            pandoc_auth: "".to_owned(),
+            pandoc_format: None,
         }
     }
 }
@@ -249,6 +258,15 @@ impl Cfg {
         if let Some(s) = cf.templates_dir {
             c.templates_dir = PathBuf::from(&s);
         }
+        if let Some(s) = cf.pandoc_uri {
+            c.pandoc_uri = s
+                .parse()
+                .map_err(|e| format!("Error parsing configuration option pandoc_uri: {}", &e))?;
+        }
+        if let Some(s) = cf.pandoc_auth {
+            c.pandoc_auth = s;
+        }
+        c.pandoc_format = cf.pandoc_format;
 
         Ok(c)
     }
@@ -280,7 +298,10 @@ pub struct Glob {
     pub users: HashMap<String, User>,
     pub addr: SocketAddr,
     pub pwd_chars: Vec<char>,
+    pub pandoc_uri: hyper::Uri,
+    pub pandoc_auth: String,
     pub social_traits: Vec<String>,
+    pub pandoc_format: Option<String>,
 }
 
 impl<'a> Glob {
@@ -1302,7 +1323,10 @@ pub async fn load_configuration<P: AsRef<Path>>(path: P) -> Result<Glob, Unified
         users: HashMap::new(),
         addr: cfg.addr,
         pwd_chars: DEFAULT_PASSWORD_CHARS.chars().collect(),
+        pandoc_uri: cfg.pandoc_uri,
+        pandoc_auth: cfg.pandoc_auth,
         social_traits: cfg.social_traits,
+        pandoc_format: cfg.pandoc_format,
     };
 
     glob.refresh_courses().await?;

@@ -812,7 +812,9 @@ document.getElementById("edit-sidecar-cancel")
         evt.preventDefault();
         DISPLAY.sidecar_edit.close();
     });
-document.getElementById("edit-sidecar-confirm")
+document.getElementById("edit-sidecar-fall")
+    .addEventListener("click", save_sidecar);
+document.getElementById("edit-sidecar-spring")
     .addEventListener("click", save_sidecar);
 
 function field_response(r) {

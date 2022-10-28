@@ -225,9 +225,9 @@ table#goal-mastery th { background-color: #aaa; }
 dialog#edit-sidecar > form fieldset {
     display: contents;
 }
-dialog#edit-sidecar > form > button {
+dialog#edit-sidecar > form button {
     font-size: initial;
-    justify-self: center;
+    justify-self: stretch;
 }
 
 

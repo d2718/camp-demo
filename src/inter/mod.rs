@@ -123,6 +123,9 @@ pub fn init<P: AsRef<Path>>(template_dir: P) -> Result<(), String> {
                 &e
             )
         })?;
+    for (t, _) in h.get_templates().iter() {
+        log::debug!("registered TEMPLATE: {}", t);
+    }
 
     TEMPLATES.set(h).map_err(|old_h| {
         let mut estr = String::from("Templates directory already registered w/templates:");
@@ -145,6 +148,9 @@ pub fn init<P: AsRef<Path>>(template_dir: P) -> Result<(), String> {
             )
         })?;
     j.register_escape_fn(escape_json);
+    for (t, _) in j.get_templates().iter() {
+        log::debug!("registered JSON TEMPLATE: {}", t);
+    }
 
     JSON_TEMPLATES.set(j).map_err(|old_j| {
         let mut estr = String::from("Templates directory already registered w/templates:");
@@ -174,7 +180,18 @@ pub fn init<P: AsRef<Path>>(template_dir: P) -> Result<(), String> {
                 &e
             )
         })?;
+    r.register_templates_directory(".md", template_dir)
+        .map_err(|e| {
+            format!(
+                "Error registering templates directory {} for .txt templates: {}",
+                template_dir.display(),
+                &e
+            )
+        })?;
     r.register_escape_fn(handlebars::no_escape);
+    for (t, _) in r.get_templates().iter() {
+        log::debug!("registered RAW TEMPLATE: {}", t);
+    }
 
     RAW_TEMPLATES.set(r).map_err(|old_h| {
         let mut estr = String::from("Templates directory already registered w/templates:");

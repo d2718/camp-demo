@@ -44,14 +44,8 @@ async fn render(
     from_fmt: Option<&str>,
     to_fmt: Option<&str>,
 ) -> Result<Vec<u8>, String> {
-    let from_opt = match from_fmt {
-        Some(fmt) => fmt,
-        None => "gfm",
-    };
-    let to_opt = match to_fmt {
-        Some(fmt) => fmt,
-        None => "pdf",
-    };
+    let from_opt = from_fmt.unwrap_or("gfm");
+    let to_opt = to_fmt.unwrap_or("pdf");
 
     let mut child = Command::new("pandoc")
         .args(["-f", from_opt, "-t", to_opt])
@@ -64,7 +58,7 @@ async fn render(
         let mut stdin = child
             .stdin
             .take()
-            .ok_or("Unable to get a handle on subprocess's stdin.".to_owned())?;
+            .ok_or_else(|| "Unable to get a handle on subprocess's stdin.".to_owned())?;
         stdin
             .write(&source)
             .await
@@ -101,7 +95,7 @@ async fn handle(
     body: Option<BodyStream>,
     Extension(auth): Extension<Arc<String>>,
 ) -> Response {
-    if !authenticate(&headers, &auth.as_str()) {
+    if !authenticate(&headers, auth.as_str()) {
         tokio::time::sleep(AUTH_FAIL_WAIT).await;
         return (
             StatusCode::UNAUTHORIZED,
@@ -179,9 +173,9 @@ async fn main() -> Result<(), String> {
             .map_err(|e| format!("Unable to parse config file {:?}: {}", CFG_FILE, &e))?;
         cfg
     };
-    let port_str = std::env::var("PORT").unwrap_or("".to_string());
-    let port: u16 = port_str.parse().unwrap_or(cfg.port.unwrap_or(80));
-    let auth_str = cfg.auth.unwrap_or(DEFAULT_AUTH.to_owned());
+    let port_str = std::env::var("PORT").unwrap_or_else(|_| "".to_string());
+    let port: u16 = port_str.parse().unwrap_or_else(|_| cfg.port.unwrap_or(80));
+    let auth_str = cfg.auth.unwrap_or_else(|| DEFAULT_AUTH.to_owned());
     println!("Listening on port {}\nwith auth str {:?}", port, &auth_str);
 
     let addr = SocketAddr::new("0.0.0.0".parse().unwrap(), port);

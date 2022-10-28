@@ -17,7 +17,7 @@ use crate::{
     MiniString, MEDSTORE,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Term {
     Fall,
     Spring,
@@ -633,7 +633,7 @@ impl Pace {
                     // If all the fields in a record are blank, we skip it.
                     let mut is_blank = true;
                     for r in record.iter() {
-                        if r.as_bytes().len() > 0 {
+                        if !r.is_empty() {
                             is_blank = false;
                             break;
                         }
@@ -782,6 +782,8 @@ each display the `Goal`'s data slightly differently.
 */
 #[derive(Debug)]
 pub struct GoalDisplay<'a> {
+    /// The ID of the goal.
+    pub id: i64,
     /// Title of the [`Course`](crate::course::Course) to which this `Goal` belongs.
     pub course: &'a str,
     /// Title of the textbook (or other source) form which this material
@@ -858,6 +860,7 @@ impl<'a> GoalDisplay<'a> {
         };
 
         let gd = GoalDisplay {
+            id: g.id,
             course: crs.title.as_str(),
             book: crs.book.as_str(),
             title: chp.title.as_str(),
@@ -879,8 +882,8 @@ impl<'a> GoalDisplay<'a> {
 /// A single line (of possibly several) in a semester summary of a student's
 /// progress.
 #[derive(Debug)]
-pub struct SummaryDisplay<'a> {
-    pub label: &'a str,
+pub struct SummaryDisplay {
+    pub label: &'static str,
     pub value: MiniString<MEDSTORE>,
 }
 
@@ -890,7 +893,7 @@ pub struct SummaryDisplay<'a> {
 #[derive(Debug)]
 pub enum RowDisplay<'a> {
     Goal(GoalDisplay<'a>),
-    Summary(SummaryDisplay<'a>),
+    Summary(SummaryDisplay),
 }
 
 /**
@@ -920,6 +923,20 @@ pub struct PaceDisplay<'a> {
     pub n_due: usize,
     pub n_done: usize,
     pub n_scheduled: usize,
+    pub fall_due: usize,
+    pub fall_done: usize,
+    pub spring_due: usize,
+    pub spring_done: usize,
+    pub fall_notices: i16,
+    pub spring_notices: i16,
+    pub fall_tests: f32,
+    pub spring_tests: f32,
+    pub fall_exam_frac: f32,
+    pub spring_exam_frac: f32,
+    pub fall_exam: Option<f32>,
+    pub spring_exam: Option<f32>,
+    pub fall_total: Option<f32>,
+    pub spring_total: Option<f32>,
     /// The index in the `rows` vector of the most-recently-completed goal.
     pub last_completed_goal: Option<usize>,
 
@@ -937,9 +954,9 @@ fn generate_summary(
     sem_frac: f32,
     n_notices: i16,
     exam_frac: f32,
-    exam_score: Option<&str>,
+    exam_score: Option<f32>,
     sem_inc: bool,
-) -> Result<SmallVec<[RowDisplay<'_>; 4]>, String> {
+) -> Result<SmallVec<[SummaryDisplay; 4]>, String> {
     log::trace!(
         "generate_summary( {:?}, {}, {}, {}, {:?}) called.",
         &term,
@@ -949,7 +966,7 @@ fn generate_summary(
         &exam_score
     );
 
-    let mut lines: SmallVec<[RowDisplay; 4]> = SmallVec::new();
+    let mut lines: SmallVec<[SummaryDisplay; 4]> = SmallVec::new();
 
     let int_score = (sem_frac * 100.0).round() as i32;
     let label = match term {
@@ -965,16 +982,16 @@ fn generate_summary(
     write!(&mut value, "{}", &int_score)
         .map_err(|e| format!("Error writing score {:?}: {}", &int_score, &e))?;
     let line = SummaryDisplay { label, value };
-    lines.push(RowDisplay::Summary(line));
+    lines.push(line);
 
-    if let Some(f) = maybe_parse_score_str(exam_score)? {
+    if let Some(f) = exam_score {
         let int_score = (100.0 * f).round() as i32;
         let label = "Exam Score";
         let mut value: MiniString<MEDSTORE> = MiniString::new();
         write!(&mut value, "{}", &int_score)
             .map_err(|e| format!("Error writing exam score {:?}: {}", &int_score, &e))?;
         let line = SummaryDisplay { label, value };
-        lines.push(RowDisplay::Summary(line));
+        lines.push(line);
 
         let sem_final = (exam_frac * f) + ((1.0 - exam_frac) * sem_frac);
         let mut sem_pct = 100.0 * sem_final;
@@ -985,7 +1002,7 @@ fn generate_summary(
             write!(&mut value, "-{}", &n_notices)
                 .map_err(|e| format!("Error writing # notices {:?}: {}", &n_notices, &e))?;
             let line = SummaryDisplay { label, value };
-            lines.push(RowDisplay::Summary(line));
+            lines.push(line);
 
             sem_pct -= n_notices as f32;
         }
@@ -1004,7 +1021,7 @@ fn generate_summary(
                 .map_err(|e| format!("Error writing semester grade: {}", &e))?;
         }
         let line = SummaryDisplay { label, value };
-        lines.push(RowDisplay::Summary(line));
+        lines.push(line);
     }
 
     Ok(lines)
@@ -1027,6 +1044,12 @@ impl<'a> PaceDisplay<'a> {
                 return Err("Date \"end-fall\" not set by Admin.".to_owned());
             }
         };
+        let sems_end = match glob.dates.get("end-spring") {
+            Some(d) => d,
+            None => {
+                return Err("Date \"end-spring\" not set by Admin.".to_owned());
+            }
+        };
 
         let mut previously_inc = false;
         let mut has_review_chapters = false;
@@ -1043,6 +1066,10 @@ impl<'a> PaceDisplay<'a> {
         let mut n_due: usize = 0;
         let mut n_done: usize = 0;
         let mut n_scheduled: usize = 0;
+        let mut fall_due: usize = 0;
+        let mut fall_done: usize = 0;
+        let mut spring_due: usize = 0;
+        let mut spring_done: usize = 0;
         let mut semf_last_id: Option<i64> = None;
         let mut sems_last_id: Option<i64> = None;
         let mut last_completed_goal: Option<usize> = None;
@@ -1091,17 +1118,78 @@ impl<'a> PaceDisplay<'a> {
             if g.incomplete {
                 has_incomplete_chapters = true;
             }
+
+            if let Some(d) = &g.due {
+                if d < semf_end {
+                    fall_due += 1;
+                    if g.done.is_some() {
+                        fall_done += 1;
+                    }
+                } else if d < sems_end {
+                    spring_due += 1;
+                    if g.done.is_some() {
+                        spring_done += 1;
+                    }
+                }
+            }
         }
 
-        let mut fall_summary: SmallVec<[RowDisplay; 4]> = if semf_last_id.is_some() {
+        let fall_tests = if semf_done > 0 {
+            semf_total / (semf_done as f32)
+        } else {
+            0.0_f32
+        };
+
+        let spring_tests = if sems_done > 0 {
+            sems_total / (sems_done as f32)
+        } else {
+            0.0_f32
+        };
+
+        let fall_exam = maybe_parse_score_str(p.student.fall_exam.as_deref()).map_err(|e| {
+            format!(
+                "Unable to parse fall exam score {:?}: {}",
+                p.student.fall_exam.as_deref().unwrap_or(""),
+                &e
+            )
+        })?;
+
+        let spring_exam = maybe_parse_score_str(p.student.spring_exam.as_deref()).map_err(|e| {
+            format!(
+                "Unable to parse spring exam score {:?}: {}",
+                p.student.spring_exam.as_deref().unwrap_or(""),
+                &e
+            )
+        })?;
+
+        let fall_total: Option<f32> = match fall_exam {
+            Some(f) => {
+                let exam = f * p.student.fall_exam_fraction;
+                let tests = fall_tests * (1.0 - p.student.fall_exam_fraction);
+                let notices = p.student.fall_notices as f32;
+                Some(exam + tests - notices)
+            }
+            None => None,
+        };
+
+        let spring_total: Option<f32> = match spring_exam {
+            Some(f) => {
+                let exam = f * p.student.spring_exam_fraction;
+                let tests = spring_tests * (1.0 - p.student.spring_exam_fraction);
+                let notices = p.student.spring_notices as f32;
+                Some(exam + tests - notices)
+            }
+            None => None,
+        };
+
+        let mut fall_summary: SmallVec<[SummaryDisplay; 4]> = if semf_last_id.is_some() {
             if semf_done > 0 {
-                let sem_frac = semf_total / (semf_done as f32);
                 generate_summary(
                     Term::Fall,
-                    sem_frac,
+                    fall_tests,
                     p.student.fall_notices,
                     p.student.fall_exam_fraction,
-                    p.student.fall_exam.as_deref(),
+                    fall_exam,
                     semf_inc,
                 )?
             } else {
@@ -1111,15 +1199,14 @@ impl<'a> PaceDisplay<'a> {
             SmallVec::new()
         };
 
-        let mut spring_summary: SmallVec<[RowDisplay; 4]> = if sems_last_id.is_some() {
+        let mut spring_summary: SmallVec<[SummaryDisplay; 4]> = if sems_last_id.is_some() {
             if sems_done > 0 {
-                let sem_frac = sems_total / (sems_done as f32);
                 generate_summary(
                     Term::Spring,
-                    sem_frac,
+                    spring_tests,
                     p.student.spring_notices,
                     p.student.spring_exam_fraction,
-                    p.student.spring_exam.as_deref(),
+                    spring_exam,
                     sems_inc,
                 )?
             } else {
@@ -1145,9 +1232,9 @@ impl<'a> PaceDisplay<'a> {
             rows.push(RowDisplay::Goal(gd));
 
             if Some(g.id) == semf_last_id {
-                rows.extend(fall_summary.drain(..));
+                rows.extend(fall_summary.drain(..).map(RowDisplay::Summary));
             } else if Some(g.id) == sems_last_id {
-                rows.extend(spring_summary.drain(..));
+                rows.extend(spring_summary.drain(..).map(RowDisplay::Summary));
             }
         }
 
@@ -1167,6 +1254,20 @@ impl<'a> PaceDisplay<'a> {
             weight_due,
             weight_done,
             weight_scheduled,
+            fall_due,
+            fall_done,
+            spring_due,
+            spring_done,
+            fall_notices: p.student.fall_notices,
+            spring_notices: p.student.spring_notices,
+            fall_tests,
+            spring_tests,
+            fall_exam_frac: p.student.fall_exam_fraction,
+            spring_exam_frac: p.student.spring_exam_fraction,
+            fall_exam,
+            spring_exam,
+            fall_total,
+            spring_total,
             n_due,
             n_done,
             n_scheduled,

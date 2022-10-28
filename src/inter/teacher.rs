@@ -1004,7 +1004,7 @@ async fn show_sidecar(
 
     match glob.users.get(uname) {
         Some(User::Student(s)) => {
-            if &s.teacher != tuname {
+            if s.teacher != tuname {
                 let estr = format!("The student {:?} is not yours.", uname);
                 return (StatusCode::FORBIDDEN, estr).into_response();
             }
@@ -1089,7 +1089,7 @@ async fn update_sidecar(
 
     match glob.users.get(&sidecar.uname) {
         Some(User::Student(s)) => {
-            if &s.teacher != tuname {
+            if s.teacher != tuname {
                 let estr = format!("The student {:?} is not yours.", &sidecar.uname);
                 return (StatusCode::FORBIDDEN, estr).into_response();
             }

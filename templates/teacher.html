@@ -199,14 +199,32 @@ const AUTH = {
                 <h4>Fall</h4><h4>Spring</h4>
                 <fieldset id="trait-container"></fieldset>
 
-                <button id="edit-sidecar-cancel" class="double">
-                    <label class="cancel">dismiss</label>
+                <button id="edit-sidecar-cancel">
+                    <label class="cancel">cancel</label>
                 </button>
-                <button id="edit-sidecar-confirm" class="double">
-                    <label class="confirm">save</label>
+                <button id="edit-sidecar-fall" class="double">
+                    <label class="confirm">fall report</label>
+                </button>
+                <button id="edit-sidecar-spring">
+                    <label class="confirm">spring report</label>
                 </button>
                 
                 <input type="hidden" name="uname">
+            </form>
+        </dialog>
+
+        <dialog id="edit-report">
+            <h1>Edit Report Markdown</h1>
+            <form name="edit-report" method="dialog">
+                <textarea name="text" id="edit-report-text"></textarea>
+                <button id="edit-report-cancel">
+                    <label class="cancel">discard</label>
+                </button>
+                <span></span>
+                <span></span>
+                <button id="edit-report-save">
+                    <label class="confirm">save</label>
+                </button>
             </form>
         </dialog>
 

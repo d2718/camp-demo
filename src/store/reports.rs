@@ -127,7 +127,7 @@ impl Store {
         let mut masteries: Vec<Mastery> = Vec::with_capacity(rows.len());
         for row in rows.iter() {
             let m =
-                row2mastery(&row).map_err(|e| e.annotate("Error reading Mastery from DB row"))?;
+                row2mastery(row).map_err(|e| e.annotate("Error reading Mastery from DB row"))?;
             masteries.push(m)
         }
 
@@ -348,10 +348,7 @@ impl Store {
         {
             Some(row) => {
                 let courses: Option<&str> = row.try_get("courses")?;
-                match blank_string_means_none(courses) {
-                    Some(cstr) => Some(cstr.to_owned()),
-                    None => None,
-                }
+                blank_string_means_none(courses).map(|cstr| cstr.to_owned())
             }
             None => None,
         };
@@ -481,10 +478,7 @@ impl Store {
         {
             Some(row) => {
                 let text: Option<&str> = row.try_get("draft")?;
-                match blank_string_means_none(text) {
-                    Some(text) => Some(text.to_owned()),
-                    None => None,
-                }
+                blank_string_means_none(text).map(|text| text.to_owned())
             }
             None => None,
         };
@@ -618,7 +612,7 @@ mod tests {
         ensure_logging();
 
         let db = Store::new(FAKEPROD.to_owned());
-        db.ensure_db_schema().await;
+        db.ensure_db_schema().await?;
 
         let facts = FactSet {
             add: FactStatus::Mastered,

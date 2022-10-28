@@ -7,7 +7,7 @@ geometry: margin=3cm
 Camelot Academy &ast; 809 Proctor St &ast; Durham, NC 27707 \
 phone: 909 632-3040 &ast; fax: 919 682-4320
 
-Student: [{{rest}} {{last}}]{.underline} \
+Student: **{{rest}} {{last}}** \
 Teacher: {{teacher}} \
    Term: {{academic_year}}, {{term}}
 
@@ -37,9 +37,7 @@ Middle and Upper School courses.
 | :---:    | :---:       | :---:          | :---:    |
 | {{add}}  | {{sub}}     | {{mul}}        | {{div}}  |
 
-<div style="page-break-after: always; visibility: hidden;">
-\pagebreak
-</div>
+\newpage
 
 ## Social/Emotional/Behavioral Goals
 
@@ -53,13 +51,13 @@ Key: 1---needs improvement, 2---age-appropriate, 3---outstanding.
 
 ## Summary
 
-|                                 | Fall Semester           | Spring Semester | Summer |
-| :------                         | :---:                   | :---:           | :---:  |
-| Requirements Met                | {{fall_reqs}}           |                 |        |
-| Chapters Remaining              | {{fall_remain}}         |                 |        |
-| Courses Completed               | {{fall_complete}}       |                 |        |
-| -					              | -                       | -               | -      |
-| Test Average		              | {{fall_tests}}%         |                 |        |
-| Final Exam ({{ exam_weight }}%) | {{fall_exam}}%          |                 |        |
-| Notices (-1 per)                | -{{fall_notices}}%      |                 |        |
-| **Semester Grade**  | **{{fall_pct}}% ({{fall_letter}})** |                 |        |
+|                                 | Fall Semester           | Spring Semester     | Summer |
+| :------                         | :---:                   | :---:               | :---:  |
+| Requirements Met                | {{fall_reqs}}           | {{spring_reqs}}     |        |
+| Chapters Remaining              | {{fall_remain}}         | {{spring_remain}}   |        |
+| Courses Completed               | {{fall_complete}}       | {{spring_complete}} |        |
+| -					                | -                       | -                   | -      |
+| Test Average		                | {{fall_tests}}%         | {{spring_tests}}%   |        |
+| Final Exam ({{ exam_weight }}%) | {{fall_exam}}%          | {{spring_exam}}%    |        |
+| Notices (-1 per)                | -{{fall_notices}}%      | -{{spring_notices}} |        |
+| **Semester Grade**  | **{{fall_pct}}% ({{fall_letter}})** | **{{spring_pct}}% ({{spring_letter}})** | |
