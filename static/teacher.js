@@ -1390,7 +1390,7 @@ function discard_pdf(evt) {
 
 document.getElementById("view-pdf-cancel")
     .addEventListener("click", discard_pdf);
-document.getElementById("vide-pdf-save")
+document.getElementById("view-pdf-save")
     .addEventListener("click", (evt => {
         evt.preventDefault();
         DISPLAY.pdf_view.close();

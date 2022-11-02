@@ -143,7 +143,8 @@ function field_response(r) {
     if(!r.ok) {
         r.text()
         .then(t => {
-            const err_text = `${t}\n(${r.status}: ${r.statusText})`;
+            const status = r.statusText || "[no reason phrase (HTTP/2 is boring)]";
+            const err_text = `${t}\n(${r.status}: ${status})`;
             RQ.add_err(err_text);
         }).catch(e => {
             console.log("Uncaught error:", e);
@@ -254,6 +255,13 @@ function download_report(evt) {
 for(const butt of document.querySelectorAll("tr.extra button.download-report")) {
     butt.addEventListener("click", download_report);
 }
+
+document.getElementById("view-pdf-cancel")
+    .addEventListener("click", evt => {
+        evt.preventDefault();
+        DISPLAY.pdf_view.close();
+    })
+
 
 DISPLAY.email_edit_submit.addEventListener("click", send_email);
 document.getElementById("edit-email-cancel")

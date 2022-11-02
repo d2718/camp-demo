@@ -1025,7 +1025,7 @@ impl<'a> Glob {
         &self,
         tuname: &str,
         term: Term,
-    ) -> Result<Vec<u8>, UnifiedError> {
+    ) -> Result<Option<Vec<u8>>, UnifiedError> {
         use std::io::Write;
         use tokio_postgres::types::{ToSql, Type};
         use zip::{write::FileOptions, CompressionMethod, ZipWriter};
@@ -1112,6 +1112,9 @@ impl<'a> Glob {
             }
             uname_n += 1;
         }
+        
+        let mut n_reports: usize = 0;
+
         if let Ok(Some(row)) = fut.await {
             if let Ok(doc) = row.try_get("doc") {
                 zip.start_file(
@@ -1133,12 +1136,17 @@ impl<'a> Glob {
                     )
                     .into());
                 }
+                n_reports += 1;
             }
         }
 
-        match zip.finish() {
-            Ok(cursor) => Ok(cursor.into_inner()),
-            Err(e) => Err(format!("Error finalizing archive: {}", &e).into()),
+        if n_reports == 0 {
+            Ok(None)
+        } else {
+            match zip.finish() {
+                Ok(cursor) => Ok(Some(cursor.into_inner())),
+                Err(e) => Err(format!("Error finalizing archive: {}", &e).into()),
+            }
         }
     }
 

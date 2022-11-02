@@ -984,7 +984,16 @@ async fn download_archive(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Respo
 
     let glob = glob.read().await;
     let data = match glob.get_reports_archive_by_teacher(tuname, term).await {
-        Ok(bytes) => bytes,
+        Ok(Some(bytes)) => bytes,
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                format!(
+                    "{} does not have any {} reports completed.",
+                    tuname, term.as_str()
+                ),
+            ).into_response();
+        },
         Err(e) => {
             log::error!(
                 "Error attempting to generate {} report archive for {:?}: {}",
