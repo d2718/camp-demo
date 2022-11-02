@@ -30,3 +30,6 @@ calendar "pages".~~
 IDK, maybe something like [this](https://editorjs.io/)?
 
 Ensure deleting `Student` data deletes sidecar/report contents, too.
+
+Downloading a report archive should check to see if there are any
+to download before making an archive.
