@@ -92,6 +92,11 @@ div.chapter-append {
 div.chapter-append > form > * { margin-left: 1em; }
 div.chapter-append input { width: 10ex; }
 
+dialog input {
+    font-family: var(--mono-font);
+    font-size: var(--mono-size);
+}
+
 button {
     padding: 0.3ex;
     min-width: 2em;

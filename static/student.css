@@ -9,7 +9,9 @@ body {
     font-family: Vollkorn;
 }
 
-div#content > div { margin-bottom: 1em; }
+h1, h2 { margin: 1rem; }
+
+div#content > div { margin-bottom: 1rem; }
 
 table {
     display: inline-block;
@@ -24,7 +26,7 @@ tr.late { background-color: #ffc; }
 tr.overdue { background-color: #fcc; }
 tr.yet { background-color: white; }
 
-th, td { padding: 0.5ex; }
+th, td { padding: 0.5ex 1ex; }
 td[title] { cursor: default; }
 tr > td:first-child { text-align: left; }
 tr > td:nth-child(2) { text-align: left; }

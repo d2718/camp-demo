@@ -1,3 +1,14 @@
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/static/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
+table.calendar {
+    --mono-font: "JetBrains Mono";
+    --mono-size: smaller;
+}
+
+
 table.calendar-month {
     display: inline-block;
     border-collapse: collapse;
@@ -10,7 +21,8 @@ table.calendar-month th {
 
 table.calendar-month td {
     text-align: right;
-    font-family: monospace;
+    font-family: var(--mono-font);
+    font-size: var(--mono-size);
     cursor: pointer;
     padding: 0.4ex;
     border: 2px solid #ddd;

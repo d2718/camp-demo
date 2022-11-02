@@ -7,6 +7,12 @@
     src: url("/static/mplus-1m-regular.woff2") format("woff2");
 }
 
+:root {
+    --table-font: "PT Sans";
+    --table-size: smaller;
+    --mono-font: "mplus1m";
+}
+
 * {
     border: 0; margin: 0; padding: 0;
     box-sizing: border-box;
@@ -16,7 +22,7 @@ body { padding: 1rem; }
 div.center { text-align: center; }
 ul { padding-left: 2em; }
 p { text-align: justify; }
-kbd { font-family: mplus1m, monospace; }
+kbd { font-family: var(--mono-font); }
 .bad { color: #822; }
 
 div#content-container { 
@@ -46,8 +52,8 @@ div#cals {
 }
 
 table.pace {
-    font-family: "PT Sans", serif;
-    font-size: smaller;
+    font-family: var(--table-font);
+    font-size: var(--table-size);
     border-collapse: collapse;
 }
 table.pace tbody tr { border-bottom: 1px dotted #aaa; }
@@ -61,7 +67,7 @@ table.pace tbody td.edit {
 table.pace tbody td.due,
 table.pace tbody td.done,
 table.pace tbody td.tries,
-table.pace tbody td.score { font-family: mplus1m, monospace; }
+table.pace tbody td.score { font-family: var(--mono-font); }
 table.pace tbody td.tries,
 table.pace tbody td.score { text-align: right; }
 
@@ -69,7 +75,7 @@ table.pace tbody tr.semsum { background-color: #ccc; }
 table.pace tbody tr.semsum td:first-child { text-align: right; }
 table.pace tbody tr.semsum td:last-child {
     text-align: left;
-    font-family: mplus1m, monospace;
+    font-family: var(--mono-font);
 }
 
 table.pace thead { background-color: #ccc; }
@@ -154,7 +160,7 @@ div#course-info table {
 div#course-info td { padding: 0.2ex 0.5ex; }
 div#course-info tbody tr:nth-child(odd) { background-color: #ccc; }
 div#course-info td:first-child {
-    font-family: mplus1m, monospace;
+    font-family: var(--mono-font);
     font-size: initial;
     text-align: right;
     padding-right: 1ex;
@@ -243,7 +249,6 @@ dialog#view-pdf object {
     justify-self: stretch;
     padding: 1rem;
 }
-
 
 a[rel="help"] {
     cursor: help;
