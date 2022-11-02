@@ -1,9 +1,25 @@
+@font-face {
+    font-family: "Vollkorn";
+    src: url("/static/Vollkorn-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/static/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
+:root {
+    --text-font: Vollkorn;
+    --mono-font: "JetBrains Mono";
+    --mono-size: smaller;
+}
+
 * {
     margin: 0; padding: 0; border: 0;
     box-sizing: border-box;
 }
 
-body { width: 100vw; }
+body { font-family: var(--text-font); }
+
 div.center { text-align: center; }
 
 ul.tabs {
@@ -46,7 +62,10 @@ table.user-table { margin: 1em 0; }
 table.user-table th { text-align: center; }
 table.user-table th,
 table.user-table td { padding: 0.5ex 1ex;; }
-table.user-table td { font-family: monospace; }
+table.user-table td {
+    font-family: var(--mono-font);
+    font-size: var(--mono-size);
+}
 table.user-table tr:nth-child(even) > td {
     background-color: #cdd;
 }

@@ -1,6 +1,12 @@
+@font-face {
+    font-family: "Vollkorn";
+    src: url("/static/Vollkorn-Regular.woff2") format("woff2");
+}
+
 body {
     text-align: center;
-    background-color: #ccc; 
+    background-color: #ccc;
+    font-family: Vollkorn;
 }
 
 div#content > div { margin-bottom: 1em; }
