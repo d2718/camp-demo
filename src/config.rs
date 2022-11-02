@@ -24,7 +24,7 @@ use crate::{
     auth::AuthResult,
     course::{Chapter, Course},
     inter,
-    pace::{Goal, Pace, Source},
+    pace::{Goal, Pace, Source, Term},
     store::Store,
     user::{Role, Student, User},
     UnifiedError,
@@ -1024,6 +1024,7 @@ impl<'a> Glob {
     pub async fn get_reports_archive_by_teacher(
         &self,
         tuname: &str,
+        term: Term,
     ) -> Result<Vec<u8>, UnifiedError> {
         use std::io::Write;
         use tokio_postgres::types::{ToSql, Type};
@@ -1049,8 +1050,9 @@ impl<'a> Glob {
         thing I find myself writing when trying to be asynchronously clever.
         */
 
+        let term_str = term.as_str();
         let stud_refs = self.get_students_by_teacher(tuname);
-        let params: Vec<[&(dyn ToSql + Sync); 1]> = stud_refs
+        let params: Vec<[&(dyn ToSql + Sync); 2]> = stud_refs
             .iter()
             .map(|u| match u {
                 User::Student(s) => Some(s),
@@ -1058,13 +1060,16 @@ impl<'a> Glob {
             })
             .filter(|s| s.is_some())
             .map(|s| {
-                let p: [&(dyn ToSql + Sync); 1] = [&s.unwrap().base.uname];
+                let p: [&(dyn ToSql + Sync); 2] = [
+                    &s.unwrap().base.uname,
+                    &term_str
+                ];
                 p
             })
             .collect();
 
         if params.is_empty() {
-            return Err(format!("Teacher {:?} doesn't have any reports finalized.", tuname).into());
+            return Err(format!("Teacher {:?} doesn't have any students.", tuname).into());
         }
         let file_buff: Vec<u8> = Vec::new();
         let zip_opts = FileOptions::default().compression_method(CompressionMethod::Stored);
@@ -1073,9 +1078,10 @@ impl<'a> Glob {
         let reader = data.read().await;
         let mut client = reader.connect().await?;
         let t = client.transaction().await?;
-        let stmt = t
-            .prepare_typed("SELECT doc FROM reports WHERE uname = $1", &[Type::TEXT])
-            .await?;
+        let stmt = t.prepare_typed(
+            "SELECT doc FROM reports WHERE uname = $1 AND term = $2",
+            &[Type::TEXT, Type::TEXT]
+        ).await?;
 
         let mut uname_n: usize = 0;
         let mut fut = t.query_opt(&stmt, &params[uname_n]);

@@ -72,6 +72,28 @@ trait AddHeaders: IntoResponse + Sized {
 /// How convenient.
 impl<T: IntoResponse + Sized> AddHeaders for T {}
 
+/**
+Utility function for extracting a header value as an `&str.`
+
+Used to reduce the noise of the nested match at the call site; returns
+an error string suitable to be returned in an immediate `text_500()` or
+`respond_bad_request()`.
+*/
+fn get_head<'a>(name: &'static str, headers: &'a HeaderMap) -> Result<&'a str, String> {
+    let opaque_val = headers.get(name).ok_or_else(|| format!(
+        "Request missing the required {:?} header.", name
+    ))?;
+    opaque_val.to_str().map_err(|e| {
+        log::error!(
+            "Error turning request's {:?} header into str: {}",
+            name, &e
+        );
+        format!(
+            "Unintelligible {:?} header value: {}", name, &e
+        )
+    })
+}
+
 /// Data type to read the form data from a front-page login request.
 #[derive(serde::Deserialize, Debug)]
 pub struct LoginData {
@@ -410,6 +432,26 @@ pub fn respond_bad_request(msg: String) -> Response {
     log::trace!("respond_bad_request( {:?} ) called.", &msg);
 
     (StatusCode::BAD_REQUEST, msg).into_response()
+}
+
+pub async fn log_request<B>(req: Request<B>, next: Next<B>) -> Response {
+    use std::fmt::Write as FmtWrite;
+
+    let mut msg = format!("{} {}\n", &req.method(), &req.uri());
+
+    let response = next.run(req).await;
+    let code = response.status();
+    writeln!(
+        &mut msg, "{} ({})",
+        &code, code.canonical_reason().unwrap_or("-")
+    ).unwrap();
+    for (k, v) in response.headers().iter() {
+        let val_str = v.to_str().unwrap_or("[not UTF-8]");
+        writeln!(&mut msg, "    {}: {}", k.as_str(), val_str).unwrap();
+    }
+
+    log::info!("{}", &msg);
+    response
 }
 
 /// Middleware function to ensure `x-camp-request-id` header is

@@ -4,10 +4,14 @@ API calls.
 */
 use core::fmt::Write as CoreWrite;
 use std::io::Write as IoWrite;
-use std::sync::Arc;
+use std::{
+    str::FromStr,
+    sync::Arc,
+};
 
 use axum::{
     extract::Extension,
+    http::header,
     http::header::{HeaderMap, HeaderName},
     response::{IntoResponse, Response},
     Json,
@@ -22,7 +26,8 @@ use super::*;
 use crate::{
     auth::AuthResult,
     config::Glob,
-    pace::{GoalDisplay, GoalStatus, Pace, PaceDisplay, RowDisplay},
+    pace::{GoalDisplay, GoalStatus, Pace, PaceDisplay, RowDisplay, Term},
+    store::Store,
     user::{BaseUser, User},
     MiniString, MEDSTORE, SMALLSTORE,
 };
@@ -78,13 +83,49 @@ pub async fn login(base: BaseUser, form: LoginData, glob: Arc<RwLock<Glob>>) -> 
         }
     };
 
+    let archive_buttons_string = match make_archive_buttons(glob.clone()).await {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("Error attempting to generate boss archive buttons: {}", &e);
+            return respond_login_error(StatusCode::INTERNAL_SERVER_ERROR, &e);
+        }
+    };
+
     let data = json!({
         "uname": &base.uname,
         "key": &auth_key,
         "calendars": calendar_string,
+        "archives": archive_buttons_string,
     });
 
     serve_raw_template(StatusCode::OK, "boss", &data, vec![])
+}
+
+/// Hods data for rendering the `"boss_archive_button"` template.
+#[derive(Serialize)]
+struct TeacherData<'a> {
+    uname: &'a str,
+    name: &'a str,
+}
+
+async fn make_archive_buttons(glob: Arc<RwLock<Glob>>) -> Result<String, String> {
+    let glob = glob.read().await;
+
+    let mut output: Vec<u8> = Vec::new();
+    for (uname, u) in glob.users.iter() {
+        if let User::Teacher(t) = u {
+            let td = TeacherData {
+                uname: uname,
+                name: &t.name,
+            };
+            write_template("boss_archive_button", &td, &mut output)
+                .map_err(|e| format!("Error writing archive button: {}", &e))?;
+        }
+    }
+
+    String::from_utf8(output).map_err(|e| format!(
+        "Boss archive buttons String not UTF-8: {}", &e
+    ))
 }
 
 /// Holds data for rendering the `"boss_goal_row"` template.
@@ -354,6 +395,8 @@ pub async fn api(
         "compose-email" => compose_email(body, glob.clone()).await,
         "send-email" => send_email(body, glob.clone()).await,
         "email-all" => email_all(glob.clone()).await,
+        "download-report" => download_report(&headers, glob.clone()).await,
+        "report-archive" => download_archive(&headers, glob.clone()).await,
         x => respond_bad_request(format!(
             "{:?} is not a recognizable x-camp-action value.",
             x
@@ -782,4 +825,209 @@ async fn email_all(glob: Arc<RwLock<Glob>>) -> Response {
         )
             .into_response()
     }
+}
+
+async fn download_report(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
+    let suname = match get_head("x-camp-student", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let term = match get_head("x-camp-term", headers) {
+        Ok(term) => term,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let term = match Term::from_str(term) {
+        Ok(term) => term,
+        Err(e) => {
+            log::warn!(
+                "Invalid x-camp-term value ({:?}) in attempt to download report for {:?}: {}",
+                term, suname, &e
+            );
+            return respond_bad_request(format!(
+                "Invalid x-camp-term value {:?}: {}", term, &e
+            ));
+        },
+    };
+
+    let glob = glob.read().await;
+
+    let stud = match glob.users.get(suname) {
+        Some(User::Student(s)) => s,
+        _ => {
+            log::warn!(
+                "Report for non-student {:?} requested.", suname
+            );
+            return respond_bad_request(format!(
+                "{:?} is not the user name of a student in the system.", suname
+            ));
+        },
+    };
+
+    let pdf_data = {
+        let data_handle = glob.data();
+        let data = data_handle.read().await;
+        let mut client = match data.connect().await {
+            Ok(c) => c,
+            Err(e) => {
+                log::error!(
+                    "Error getting DB connection to retrieve report PDF for {:?}: {}",
+                    suname, &e
+                );
+                return text_500(Some(format!(
+                    "Error connecting to the database: {}", &e
+                )));
+            },
+        };
+        let t = match client.transaction().await {
+            Ok(t) => t,
+            Err(e) => {
+                log::error!(
+                    "Error opening Transaction to retrieve report PDF for {:?}: {}",
+                    suname, &e
+                );
+                return text_500(Some(format!(
+                    "Error initiating database transaction: {}", &e
+                )));
+            },
+        };
+
+        let pdf_data = match Store::get_final(&t, suname, term).await {
+            Ok(Some(v)) => v,
+            Ok(None) => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    format!(
+                        "{} {} does not yet have a {} report in the system.",
+                        &stud.rest, &stud.last, &term
+                    ),
+                ).into_response();
+            },
+            Err(e) => {
+                log::error!(
+                    "Error querying database for {} report for {:?}: {}",
+                    &term, suname, &e
+                );
+                return text_500(Some(format!(
+                    "Error retrieving report from database: {}", &e
+                )));
+            },
+        };
+
+        if let Err(e) = t.commit().await {
+            log::error!(
+                "<WEIRD!> Error committing transaction to retrieve {} PDF report for {:?}: {}",
+                &term, suname, &e
+            );
+            return text_500(Some(format!(
+                "Error committing transaction (weird, I know): {}", &e
+            )));
+        }
+
+        pdf_data
+    };
+
+    // The first thing this function does is respond with an error if there's
+    // no "x-camp-student" or "x-camp-term" headers, so these are both
+    // guaranteed to be here.
+    let suname_header = headers.get("x-camp-student").unwrap().clone();
+    let term_header = headers.get("x-camp-term").unwrap().clone();
+
+    (
+        StatusCode::OK,
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/pdf"),
+            ),
+            (
+                header::CONTENT_DISPOSITION,
+                HeaderValue::from_static("inline"),
+            ),
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("download-pdf"),
+            ),
+            (
+                HeaderName::from_static("x-camp-student"),
+                suname_header,
+            ),
+            (
+                HeaderName::from_static("x-camp-term"),
+                term_header,
+            ),
+        ],
+        pdf_data
+    ).into_response()
+}
+
+async fn download_archive(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
+    let tuname = match get_head("x-camp-teacher", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let term_str = match get_head("x-camp-term", headers) {
+        Ok(term) => term,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let term = match Term::from_str(term_str) {
+        Ok(term) => term,
+        Err(e) => {
+            log::warn!(
+                "Invalid x-camp-term value ({:?}) in attempt to download report for {:?}: {}",
+                term_str, tuname, &e
+            );
+            return respond_bad_request(format!(
+                "Invalid x-camp-term value {:?}: {}", term_str, &e
+            ));
+        },
+    };
+
+    let glob = glob.read().await;
+    let data = match glob.get_reports_archive_by_teacher(tuname, term).await {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            log::error!(
+                "Error attempting to generate {} report archive for {:?}: {}",
+                term_str, tuname, &e
+            );
+            return text_500(Some(format!(
+                "Error generating archive: {}", &e
+            )));
+        },
+    };
+
+    let disposition_str = format!(
+        "attachment; filename=\"{}_{}.zip\"", tuname, term_str
+    );
+    let disposition_value = match HeaderValue::from_str(&disposition_str) {
+        Ok(val) => val,
+        Err(e) => {
+            log::error!(
+                "Error generating Content-Disposition header value ({:?}): {}",
+                &disposition_str, &e
+            );
+            return text_500(Some(format!(
+                "Error generating Content-Disposition header value: {}", &e
+            )));
+        },
+    };
+
+    (
+        StatusCode::OK,
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/zip"),
+            ),
+            (
+                header::CONTENT_DISPOSITION,
+                disposition_value,
+            ),
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("download-archive"),
+            ),
+        ],
+        data
+    ).into_response()
 }

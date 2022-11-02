@@ -508,14 +508,11 @@ impl Store {
             .await?;
         let params: [&(dyn ToSql + Sync); 3] = [&uname, &term.as_str(), &pdf_bytes];
 
-        try_join!(
-            t.execute(
-                "DELETE FROM reports WHERE uname = $1 AND term = $2",
-                &params[..2]
-            ),
-            t.execute(&insert_stmt, &params[..]),
-        )
-        .map_err(|e| format!("Unable to clear old report or set new one: {}", &e))?;
+        t.execute(
+            "DELETE FROM reports WHERE uname = $1 AND term = $2",
+            &params[..2]
+        ).await?;
+        t.execute(&insert_stmt, &params[..]).await?;
 
         Ok(())
     }
@@ -555,6 +552,25 @@ impl Store {
         };
 
         Ok(opt)
+    }
+
+    pub async fn clear_final(
+        &self,
+        uname: &str,
+        term: Term,
+    ) -> Result<(), DbError> {
+        log::trace!(
+            "Store::clear_final( {:?}, {:?} ) called.",
+            uname, &term.as_str()
+        );
+
+        let client = self.connect().await?;
+        client.execute(
+            "DELETE FROM reports WHERE uname = $1 AND term = $2",
+            &[&uname, &term.as_str()],
+        ).await?;
+
+        Ok(())
     }
 }
 

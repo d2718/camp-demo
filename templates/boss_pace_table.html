@@ -20,7 +20,13 @@
         {{ rows }}
         <tr class="extra">
             <td colspan="6">
-                <button data-uname="{{ uname }}">
+                <button class="download-report" data-uname="{{ uname }}" data-term="fall">
+                    <label>get Fall report</label>
+                </button>
+                <button class="download-report" data-uname="{{ uname }}" data-term="spring">
+                    <label>get Spring report</label>
+                </button>
+                <button data-uname="{{ uname }}" class="send-email">
                     <label>email {{ rest }}'s parent</label>
                 </button>
             </td>

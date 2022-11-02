@@ -230,6 +230,20 @@ dialog#edit-sidecar > form button {
     justify-self: stretch;
 }
 
+dialog#edit-report,
+dialog#view-pdf {
+    width: calc(100vw - 2rem);
+    height: calc(100vh - 2rem);
+    overflow: scroll;
+}
+dialog#edit-report textarea,
+dialog#view-pdf object {
+    grid-column: span 2;
+    min-height: 75vh;
+    justify-self: stretch;
+    padding: 1em;
+}
+
 
 a[rel="help"] {
     cursor: help;

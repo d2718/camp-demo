@@ -84,23 +84,32 @@ function field_response(r) {
         const err_txt = `Response lacked x-camp-action header. (See console error #${e_n}.)`;
         console.log(e_n, r);
         RQ.add_err(err_txt);
-
-    } else if(action == "populate-users") {
-        populate_users(r);
-    } else if(action == "populate-courses") {
-        populate_courses(r);
-    } else {
-        const e_n = STATE.next_error();
-        const err_txt = `Unrecognized x-camp-action header: ${action}. (See console error #${e_n})`;
-        console.log(e_n, r);
-        RQ.add_err(err_txt);
+        return;
+    }
+    switch(action) {
+        case "populate-users":
+            populate_users(r); break;
+        case "populate-courses":
+            populate_courses(r); break;
+        default:
+            const e_n = STATE.next_error();
+            const err_txt = `Unrecognized x-camp-action header: ${action}. (See console error #${e_n})`;
+            console.log(e_n, r);
+            RQ.add_err(err_txt);
+            break;
     }
 }
 
-function request_action(action, body, description) {
+function request_action(action, body, description, extra_headers) {
+    const headers = { "x-camp-action": action };
+    if(extra_headers) {
+        for(const [name, value] of Object.entries(extra_headers)) {
+            headers[name] = value;
+        }
+    }
     const options = {
         method: "POST",
-        headers: { "x-camp-action": action }
+        headers: headers,
     };
     if(body) {
         const bt = typeof(body);

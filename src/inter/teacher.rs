@@ -1,10 +1,15 @@
 /*!
 Subcrate for interoperation with Teacher users.
 */
-use std::{collections::HashMap, io::Cursor};
+use std::{
+    collections::HashMap,
+    io::Cursor,
+    str::FromStr,
+};
 
 use axum::{
     extract::Extension,
+    http::header,
     http::header::{HeaderMap, HeaderName, HeaderValue},
     response::{IntoResponse, Response},
     Json,
@@ -19,8 +24,9 @@ use crate::{
     auth::AuthResult,
     config::Glob,
     course::Course,
-    pace::{maybe_parse_score_str, BookCh, Goal, Pace, Source},
-    report::ReportSidecar,
+    pace::{maybe_parse_score_str, BookCh, Goal, Pace, Source, Term},
+    report, report::ReportSidecar,
+    store::Store,
     user::*,
     DATE_FMT,
 };
@@ -167,8 +173,23 @@ pub async fn api(
         "upload-goals" => upload_goals(&headers, body, glob.clone()).await,
         "show-sidecar" => show_sidecar(&headers, body, glob.clone()).await,
         "update-sidecar" => update_sidecar(&headers, body, glob.clone()).await,
+        "render-report" => generate_report(&headers, body, glob.clone()).await,
+        "discard-pdf" => discard_pdf(&headers, glob.clone()).await,
         x => respond_bad_request(format!("{:?} is not a recognized x-camp-action value.", &x)),
     }
+}
+
+/**
+Generate a response to a request that requires no other data or action.
+*/
+fn respond_ok() -> Response {
+    (
+        StatusCode::OK,
+        [(
+            HeaderName::from_static("x-camp-action"),
+            HeaderValue::from_static("none"),
+        )]
+    ).into_response()
 }
 
 /**
@@ -450,16 +471,9 @@ x-camp-action: populate-goals
 ```
 */
 async fn populate_goals(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
-    let uname: &str = match headers.get("x-camp-uname") {
-        Some(uname) => match uname.to_str() {
-            Ok(s) => s,
-            Err(_) => {
-                return text_500(None);
-            }
-        },
-        None => {
-            return text_500(None);
-        }
+    let uname = match get_head("x-camp-uname", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return text_500(Some(e)); }
     };
 
     let pace_cals = match glob.read().await.get_paces_by_teacher(uname).await {
@@ -917,16 +931,9 @@ async fn upload_goals(
         }
     };
 
-    let tuname: &str = match headers.get("x-camp-uname") {
-        Some(uname) => match uname.to_str() {
-            Ok(s) => s,
-            Err(_) => {
-                return text_500(None);
-            }
-        },
-        None => {
-            return text_500(None);
-        }
+    let tuname = match get_head("x-camp-uname", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return text_500(Some(e)); },
     };
 
     let mut others_students = String::new();
@@ -988,16 +995,9 @@ async fn show_sidecar(
 
     let uname = &body;
 
-    let tuname: &str = match headers.get("x-camp-uname") {
-        Some(uname) => match uname.to_str() {
-            Ok(s) => s,
-            Err(_) => {
-                return text_500(None);
-            }
-        },
-        None => {
-            return text_500(None);
-        }
+    let tuname = match get_head("x-camp-uname", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return text_500(Some(e)); },
     };
 
     let glob = glob.read().await;
@@ -1073,16 +1073,25 @@ async fn update_sidecar(
         }
     };
 
-    let tuname: &str = match headers.get("x-camp-uname") {
-        Some(uname) => match uname.to_str() {
-            Ok(s) => s,
-            Err(_) => {
-                return text_500(None);
-            }
+    let tuname = match get_head("x-camp-uname", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return text_500(Some(e)); },
+    };
+    let term = match get_head("x-camp-term", headers) {
+        Ok(term) => term,
+        Err(e) => { return respond_bad_request(e); }
+    };
+    let term = match term {
+        "fall" => Term::Fall,
+        "spring" => Term::Spring,
+        x => {
+            log::error!(
+                "Header \"x-camp-action\" value {:?} shouldn't make it this far.", x
+            );
+            return respond_bad_request(format!(
+                "Unrecognized x-camp-term value {:?}", x
+            ));
         },
-        None => {
-            return text_500(None);
-        }
     };
 
     let glob = glob.read().await;
@@ -1093,7 +1102,7 @@ async fn update_sidecar(
                 let estr = format!("The student {:?} is not yours.", &sidecar.uname);
                 return (StatusCode::FORBIDDEN, estr).into_response();
             }
-        }
+        },
         _ => {
             let estr = format!(
                 "The uname {:?} does not belong to a student in the system.",
@@ -1112,12 +1121,289 @@ async fn update_sidecar(
         return text_500(Some(estr));
     }
 
+    let text = match report::generate_report_markup(&sidecar.uname, term, &glob).await {
+        Ok(text) => text,
+        Err(e) => {
+            log::error!(
+                "Error generating {} report markdown for {:?}: {}",
+                term, &sidecar.uname, &e
+            );
+            return text_500(Some(format!(
+                "Error generating report markup: {}", &e
+            )));
+        },
+    };
+
+    let term = match term {
+        Term::Fall => HeaderValue::from_static("fall"),
+        Term::Spring => HeaderValue::from_static("spring"),
+        x => {
+            log::error!(
+                "Somehow a {:?} has made it this far; this shouldn't happen.", &x
+            );
+            return respond_bad_request(format!(
+                "Reports for {} are as of yet unsupported.", &x
+            ));
+        },
+    };
+
+    let suname = match HeaderValue::from_str(&sidecar.uname) {
+        Ok(uname) => uname,
+        Err(e) => { 
+            let estr = format!(
+                "Error turning student uname {:?} into a header value: {}",
+                &sidecar.uname, &e
+            );
+            log::error!("Error generating report markdown response: {}", &estr);
+            return text_500(Some(estr));
+        },
+    };
+
     (
         StatusCode::OK,
-        [(
-            HeaderName::from_static("x-camp-action"),
-            HeaderValue::from_static("none"),
-        )],
+        [
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("edit-markdown"),
+            ),
+            (
+                HeaderName::from_static("x-camp-student"),
+                suname,
+            ),
+            (
+                HeaderName::from_static("x-camp-term"),
+                term,
+            ),
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("text/markdown"),
+            ),
+        ],
+        text
     )
         .into_response()
+}
+
+async fn generate_report(
+    headers: &HeaderMap,
+    body: Option<String>,
+    glob: Arc<RwLock<Glob>>
+) -> Response {
+    let suname = match get_head("x-camp-student", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let tuname = match get_head("x-camp-uname", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return text_500(Some(e)); },
+    };
+    let term = match get_head("x-camp-term", headers) {
+        Ok(term) => term,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let term = match Term::from_str(term) {
+        Ok(term) => term,
+        Err(e) => {
+            log::warn!(
+                "Invalid x-camp-term value ({:?}) in attempt to generate report for {:?}: {}",
+                term, suname, &e
+            );
+            return respond_bad_request(format!(
+                "Invalid x-camp-term value {:?}: {}", term, &e
+            ));
+        },
+    };
+    let body = match body {
+        Some(body) => body,
+        None => {
+            return respond_bad_request(
+                "Request needs application/json body with ReportSidecar details.".to_owned(),
+            );
+        }
+    };
+
+    let glob = glob.read().await;
+
+    match glob.users.get(suname) {
+        Some(User::Student(s)) => {
+            if s.teacher != tuname {
+                let estr = format!("The student {:?} is not yours.", &suname);
+                return (StatusCode::FORBIDDEN, estr).into_response();
+            }
+        },
+        _ => {
+            let estr = format!(
+                "The uname {:?} does not belong to a student in the system.",
+                &suname
+            );
+            return respond_bad_request(estr);
+        }
+    }
+
+    {
+        let data_guard = glob.data();
+        let data = data_guard.read().await;
+        let mut client = match data.connect().await {
+            Ok(client) => client,
+            Err(e) => { return text_500(Some(e.to_string())); },
+        };
+        let t = match client.transaction().await {
+            Ok(trans) => trans,
+            Err(e) => { return text_500(Some(e.to_string())); },
+        };
+        if let Err(e) = Store::set_draft(&t, suname, term, &body).await {
+            log::error!(
+                "Error attempting to store {} report draft for {:?}: {}",
+                &term, &suname, &e
+            );
+            return text_500(Some(format!(
+                "Error attempting to store report draft in database: {}", &e
+            )));
+        }
+        if let Err(e) = t.commit().await {
+            log::error!(
+                "Error committing transaction for storing {} report draft for {:?}: {}",
+                &term, &suname, &e
+            );
+            return text_500(Some(format!(
+                "Error committing report draft to database: {}", &e
+            )));
+        }
+    }
+
+    let pdf_data = match report::render_markdown(body, &glob).await {
+        Ok(data) => data,
+        Err(e) => {
+            log::error!(
+                "Error attempting to render {} report PDF for {:?}: {}",
+                &term, suname, &e
+            );
+            return text_500(Some(format!(
+                "Error generating PDF file: {}", &e
+            )));
+        },
+    };
+
+    {
+        let data_guard = glob.data();
+        let data = data_guard.read().await;
+        let mut client = match data.connect().await {
+            Ok(client) => client,
+            Err(e) => { return text_500(Some(e.to_string())); },
+        };
+        let t = match client.transaction().await {
+            Ok(trans) => trans,
+            Err(e) => { return text_500(Some(e.to_string())); },
+        };
+        if let Err(e) = Store::set_final(&t, suname, term, &pdf_data).await {
+            log::error!(
+                "Error attempting to store final {} report PDF for {:?}: {}",
+                &term, &suname, &e
+            );
+            return text_500(Some(format!(
+                "Error attempting to store report PDF in database: {}", &e
+            )));
+        }
+        if let Err(e) = t.commit().await {
+            log::error!(
+                "Error committing transaction for storing {} report PDF for {:?}: {}",
+                &term, &suname, &e
+            );
+            return text_500(Some(format!(
+                "Error committing final report PDF to database: {}", &e
+            )));
+        }
+    }
+
+    let uname = match HeaderValue::from_str(suname) {
+        Ok(uname) => uname,
+        Err(e) => {
+            let estr = format!(
+                "Error converting student uname {:?} into header value: {}",
+                suname, &e
+            );
+            log::error!("{}", &estr);
+            return text_500(Some(estr));
+        },
+    };
+
+    (
+        StatusCode::OK,
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/pdf"),
+            ),
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("display-pdf"),
+            ),
+            (
+                HeaderName::from_static("x-camp-student"),
+                uname,
+            ),
+            (
+                HeaderName::from_static("x-camp-term"),
+                headers.get("x-camp-term").unwrap().clone(),
+            ),
+        ],
+        pdf_data
+    ).into_response()
+}
+
+async fn discard_pdf(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
+    let suname = match get_head("x-camp-student", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let tuname = match get_head("x-camp-uname", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return text_500(Some(e)); },
+    };
+    let term = match get_head("x-camp-term", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let term = match Term::from_str(term) {
+        Ok(t) => t,
+        Err(e) => {
+            log::warn!(
+                "Invalid x-camp-term value ({:?}) in attempt to generate report for {:?}: {}",
+                term, suname, &e
+            );
+            return respond_bad_request(format!(
+                "Invalid x-camp-term value {:?}: {}", term, &e
+            ));
+        },
+    };
+
+    let glob = glob.read().await;
+    match glob.users.get(suname) {
+        Some(User::Student(s)) => {
+            if s.teacher != tuname {
+                let estr = format!("The student {:?} is not yours.", &suname);
+                return (StatusCode::FORBIDDEN, estr).into_response();
+            }
+        },
+        _ => {
+            let estr = format!(
+                "The uname {:?} does not belong to a student in the system.",
+                &suname
+            );
+            return respond_bad_request(estr);
+        },
+    }
+
+    match glob.data().read().await.clear_final(suname, term).await {
+        Ok(()) => { return respond_ok(); },
+        Err(e) => {
+            log::error!(
+                "Error attempting to discard {} report PDF for {:?}: {}",
+                &term, suname, &e
+            );
+            return text_500(Some(format!(
+                "Error attempting to discard report PDF: {}", &e
+            )));
+        }
+    }
 }

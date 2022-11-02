@@ -25,6 +25,8 @@ const DISPLAY = {
     goal_complete: document.getElementById("complete-goal"),
     goal_complete_meta: document.getElementById("complete-goal-meta"),
     sidecar_edit: document.getElementById("edit-sidecar"),
+    report_edit: document.getElementById("edit-report"),
+    pdf_view: document.getElementById("view-pdf"),
 };
 const GOAL_MASTERY_OPTS = [
     {val: "Not", text: "Not Mastered"},
@@ -841,33 +843,47 @@ function field_response(r) {
         const err_txt = `Response lacked x-camp-action header. (See console error #${e_n}.)`;
         console.log(`Error #${e_n} response:`, r);
         RQ.add_err(err_txt);
-
-    } else if(action == "populate-courses") {
-        populate_courses(r);
-    } else if(action == "populate-goals") {
-        populate_goals(r);
-    } else if(action == "update-pace") {
-        replace_pace(r);
-    } else if(action == "populate-dates") {
-        populate_dates(r);
-    } else if(action == "populate-traits") {
-        populate_traits(r);
-    } else if(action == "show-sidecar") {
-        show_sidecar(r);
-    } else if(action == "none") {
-        /* Don't do anything. This is a success that requires no action. */
-    } else {
-        const e_n = next_err();
-        const err_txt = `Unrecognized x-camp-action header: "${action}". (See console error #${e_n}.)`;
-        console.log(`Error #${e_n} response:`, r);
-        RQ.add_err(err_txt);
+        return;
+    }
+    switch(action) {
+        case "populate-courses":
+            populate_courses(r); break;
+        case "populate-goals":
+            populate_goals(r); break;
+        case "update-pace":
+            replace_pace(r); break;
+        case "populate-dates":
+            populate_dates(r); break;
+        case "populate-traits":
+            populate_traits(r); break;
+        case "show-sidecar":
+            show_sidecar(r); break;
+        case "edit-markdown":
+            edit_markdown(r); break;
+        case "display-pdf":
+            show_pdf(r); break;
+        case "none":
+            /* Don't do anything. This is a success that requires no action. */
+            break;
+        default:
+            const e_n = next_err();
+            const err_txt = `Unrecognized x-camp-action header: "${action}". (See console error #${e_n}.)`;
+            console.log(`Error #${e_n} response:`, r);
+            RQ.add_err(err_txt);
+            break;
     }
 }
 
-function request_action(action, body, description) {
+function request_action(action, body, description, extra_headers) {
+    const headers = { "x-camp-action": action };
+    if(extra_headers) {
+        for(const [name, value] of Object.entries(extra_headers)) {
+            headers[name] = value;
+        }
+    }
     const options = {
         method: "POST",
-        headers: { "x-camp-action": action }
+        headers: headers
     };
     if(body) {
         const btype = typeof(body);
@@ -1241,6 +1257,7 @@ function edit_sidecar(evt) {
 
 function save_sidecar(evt) {
     evt.preventDefault();
+    const term = this.getAttribute("data-term");
     const form = document.forms["edit-sidecar"];
     const data = new FormData(form);
     const uname = data.get("uname");
@@ -1283,8 +1300,98 @@ function save_sidecar(evt) {
     }).filter(x => Boolean(x));
     sc["mastery"] = mastery;
 
+    const extra_headers = {
+        "x-camp-term": term,
+    };
+
     const p = DATA.paces.get(uname);
     const msg = `Saving report data sidecar for ${p.rest} ${p.last}.`;
     DISPLAY.sidecar_edit.close();
-    request_action("update-sidecar", sc, msg);
+    request_action("update-sidecar", sc, msg, extra_headers);
 }
+
+function edit_markdown(r) {
+    r.text()
+    .then(text => {
+        const form = document.forms["edit-report"];
+        const textarea = form.elements["text"];
+        textarea.value = text;
+        const uname = r.headers.get("x-camp-student");
+        const term = r.headers.get("x-camp-term");
+        const butt = form.elements["save"];
+        if(uname) {
+            butt.setAttribute("data-uname", uname);
+        } else {
+            RQ.set_err("Report markdown response has no x-camp-student header value.")
+            return;
+        }
+        butt.setAttribute("data-term", term);
+        DISPLAY.report_edit.showModal();
+    })
+    .catch(log_numbered_error);
+}
+
+async function save_markdown(evt) {
+    const form = document.forms["edit-report"];
+    const data = new FormData(form);
+    const text = data.get("text");
+    let term = form.elements["save"].getAttribute("data-term");
+    let uname = form.elements["save"].getAttribute("data-uname");
+    DISPLAY.report_edit.close();
+
+    const extra_headers = {
+        "x-camp-student": uname,
+        "x-camp-term": term,
+    };
+    const pace = DATA.paces.get(uname);
+    const desc = `Generating ${term} report for ${pace.rest} ${pace.last}.`;
+    request_action("render-report", text, desc, extra_headers);
+}
+
+document.getElementById("edit-report-cancel")
+    .addEventListener("click", (evt => {
+        evt.preventDefault();
+        DISPLAY.report_edit.close();
+    }));
+document.getElementById("edit-report-save")
+    .addEventListener("click", save_markdown);
+
+function show_pdf(r) {
+    r.blob()
+    .then(blob => {
+        const form = document.forms["view-pdf"];
+        const uname = r.headers.get("x-camp-student");
+        const term = r.headers.get("x-camp-term");
+        const butt = form.elements["discard"];
+        butt.setAttribute("data-uname", uname);
+        butt.setAttribute("data-term", term);
+        const obj = document.getElementById("view-pdf-object");
+        const url = window.URL.createObjectURL(blob);
+        obj.data = url;
+        DISPLAY.pdf_view.showModal();
+    })
+    .catch(log_numbered_error);
+}
+
+function discard_pdf(evt) {
+    evt.preventDefault();
+    const uname = this.getAttribute("data-uname");
+    const term = this.getAttribute("data-term");
+    DISPLAY.pdf_view.close();
+
+    const extra_headers = {
+        "x-camp-student": uname,
+        "x-camp-term": term,
+    };
+    const pace = DATA.paces.get(uname);
+    const desc = `Discarding ${term} report for ${pace.rest} ${pace.last}.`;
+    request_action("discard-pdf", null, desc, extra_headers);
+}
+
+document.getElementById("view-pdf-cancel")
+    .addEventListener("click", discard_pdf);
+document.getElementById("vide-pdf-save")
+    .addEventListener("click", (evt => {
+        evt.preventDefault();
+        DISPLAY.pdf_view.close();
+    }));

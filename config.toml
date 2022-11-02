@@ -3,3 +3,4 @@
 auth_db_connect_string = "host=/var/run/postgresql user=camp_test password='camp_test' dbname=camp_auth_fakeprod"
 data_db_connect_string = "host=/var/run/postgresql user=camp_test password='camp_test' dbname=camp_store_fakeprod"
 sendgrid_auth_string = "Bearer blah blah not a real token"
+pandoc_format = "markdown+smart"

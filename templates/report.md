@@ -19,8 +19,6 @@ study was laid out for your student. Please note that your student may
 academic year; this is not unusual, and an important part of the
 mastery-based learning process.
 
-| Course/Chapter    | Due  | Done | Tries | Score | Retention     |
-| :---------------- | :--: | :--: | :--:  |  :--: | :------------ |
 {{ pace_lines }}
 
 {{ requirement_statement }}
@@ -30,12 +28,10 @@ mastery-based learning process.
 In addition to the regular curriculum, your student's speed and recall
 accuracy of the basic ``Math Facts'' (the results of the four basic binary
 operations on whole numbers from 1 through 12) was assessed. Please note
-that mastery of all four fact families is required for comlpetion of all
+that mastery of all four fact families is required for completion of all
 Middle and Upper School courses.
 
-| Addition | Subtraction | Multiplication | Division |
-| :---:    | :---:       | :---:          | :---:    |
-| {{add}}  | {{sub}}     | {{mul}}        | {{div}}  |
+{{ facts_table }}
 
 <div style="page-break-after: always; visibility: hidden;">
 \pagebreak
@@ -45,21 +41,10 @@ Middle and Upper School courses.
 
 When in doubt, your student has been assessed as ``age-appropriate.''
 
-|            | Fall Sem  | Spring Sem | Summer |
-| :--------- |   :---:   |    :---:   |  :---: |
 {{ social_lines }}
 
 Key: 1---needs improvement, 2---age-appropriate, 3---outstanding.
 
 ## Summary
 
-|                                 | Fall Semester           | Spring Semester | Summer |
-| :------                         | :---:                   | :---:           | :---:  |
-| Requirements Met                | {{fall_reqs}}           |                 |        |
-| Chapters Remaining              | {{fall_remain}}         |                 |        |
-| Courses Completed               | {{fall_complete}}       |                 |        |
-| -					              | -                       | -               | -      |
-| Test Average		              | {{fall_tests}}%         |                 |        |
-| Final Exam ({{ exam_weight }}%) | {{fall_exam}}%          |                 |        |
-| Notices (-1 per)                | -{{fall_notices}}%      |                 |        |
-| **Semester Grade**  | **{{fall_pct}}% ({{fall_letter}})** |                 |        |
+{{ summary_lines }}

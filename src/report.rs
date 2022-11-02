@@ -4,7 +4,8 @@ for report-writing season.
 */
 use std::{
     collections::{BTreeMap, HashMap},
-    io::Write,
+    fmt::Write as FmtWrite,
+    io::Write as IoWrite,
 };
 
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,66 @@ fn write_maybe_percent(maybe_frac: Option<f32>) -> Result<MiniString<SMALLSTORE>
         Some(f) => write_percent(f),
         None => Ok(MiniString::new()),
     }
+}
+
+fn max_chunk_lengths(chunks: &[Vec<&str>]) -> Result<Vec<usize>, &'static str> {
+    let max_len = match chunks.iter()
+        .map(|line| line.len())
+        .max()
+    {
+        Some(n) => n,
+        None => { return Err("table has zero lines"); },
+    };
+    let mut maxen = vec![0usize; max_len];
+    
+    for line in chunks.iter() {
+        for (n, chunk) in line.iter().enumerate() {
+            let len = chunk.len();
+            if len > maxen[n] { maxen[n] = len; }
+        }
+    }
+    
+    Ok(maxen)
+}
+
+fn format_markdown_table(table_input: String) -> Result<String, String> {
+    let lines: Vec<&str> = table_input.split("\n").collect();
+    
+    let chunks: Vec<Vec<&str>> = lines.iter()
+        .map(|line| line.split('|').map(|s| s.trim()).collect())
+        .collect();
+    
+    let maxen = match max_chunk_lengths(&chunks) {
+        Ok(v) => v,
+        Err(_) => {
+            log::warn!("format_markdown_table( [String] ): table has zero lines");
+            return Ok(String::new());
+        },
+    };
+    
+    // For each chunk, the max chunk length for that column, plus a space of
+    // padding on each side, plus one pipe character. Finally one for the
+    // extra pipe fence post, and one for the newline.
+    let line_length: usize = maxen.iter().map(|&n| n+3).sum::<usize>() + 2;
+    let output_length = line_length * chunks.len();
+    println!("output length: {}", &output_length);
+    
+    let mut output = String::with_capacity(output_length);
+    
+    for line in chunks.iter() {
+        output.push('|');
+        for (n, chunk) in line.iter().enumerate() {
+            if maxen[n] > 0 {
+                write!(&mut output, " {:width$} |", chunk, width = maxen[n])
+                    .map_err(|e| format!(
+                        "Error writing formatted table: {}", &e
+                    ))?;
+            }
+        }
+        output.push('\n');
+    }
+    
+    Ok(output)
 }
 
 /// Represents the "mastery" status of a Goal in a report.
@@ -152,6 +213,44 @@ pub struct ReportSidecar {
     pub mastery: Vec<Mastery>,
 }
 
+fn fact_status_display(factstatus: FactStatus) -> &'static str {
+    match factstatus {
+        FactStatus::Not => "Not Mastered",
+        FactStatus::Mastered => "Mastered",
+        FactStatus::Excused => "Excused",
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct FactSetDisplay {
+    add: &'static str,
+    sub: &'static str,
+    mul: &'static str,
+    div: &'static str,
+}
+
+impl Default for FactSetDisplay {
+    fn default() -> Self {
+        FactSetDisplay {
+            add: fact_status_display(FactStatus::Not),
+            sub: fact_status_display(FactStatus::Not),
+            mul: fact_status_display(FactStatus::Not),
+            div: fact_status_display(FactStatus::Not),
+        }
+    }
+}
+
+impl From<FactSet> for FactSetDisplay {
+    fn from(fs: FactSet) -> Self {
+        FactSetDisplay {
+            add: fact_status_display(fs.add),
+            sub: fact_status_display(fs.sub),
+            mul: fact_status_display(fs.mul),
+            div: fact_status_display(fs.div),
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct ReportGoalData<'a> {
     course: &'a str,
@@ -230,10 +329,7 @@ pub struct ReportData<'a> {
     academic_year: MiniString<SMALLSTORE>,
     term: &'a str,
     pace_lines: String,
-    add: &'a str,
-    sub: &'a str,
-    mul: &'a str,
-    div: &'a str,
+    facts_table: String,
     social_lines: String,
     fall_reqs: &'a str,
     spring_reqs: &'a str,
@@ -253,14 +349,7 @@ pub struct ReportData<'a> {
     fall_letter: &'a str,
     spring_pct: MiniString<SMALLSTORE>,
     spring_letter: &'a str,
-}
-
-fn fact_status_display(factstatus: FactStatus) -> &'static str {
-    match factstatus {
-        FactStatus::Not => "Not Mastered",
-        FactStatus::Mastered => "Mastered",
-        FactStatus::Excused => "Excused",
-    }
+    summary_lines: String,
 }
 
 fn reqs_complete(is_incomplete: bool) -> &'static str {
@@ -322,19 +411,19 @@ impl<'a, 'b> ReportData<'a> {
             years
         };
 
-        let (add, sub, mul, div) = match sc.facts {
-            Some(fs) => (
-                fact_status_display(fs.add),
-                fact_status_display(fs.sub),
-                fact_status_display(fs.mul),
-                fact_status_display(fs.div),
-            ),
-            None => (
-                fact_status_display(FactStatus::Not),
-                fact_status_display(FactStatus::Not),
-                fact_status_display(FactStatus::Not),
-                fact_status_display(FactStatus::Not),
-            ),
+        let facts_status = match sc.facts {
+            None => FactSetDisplay::default(),
+            Some(fs) => FactSetDisplay::from(fs),
+        };
+
+        let facts_table = {
+            let table = render_raw_template("facts_table", &facts_status)
+                .map_err(|e| format!(
+                    "Unable to write fact mastery table: {}", &e
+                ))?;
+            format_markdown_table(table).map_err(|e| format!(
+                "Unable to format fact mastery table: {}", &e
+            ))?
         };
 
         let fall_tests = write_percent(pd.fall_tests)
@@ -350,7 +439,10 @@ impl<'a, 'b> ReportData<'a> {
             let mastery: BTreeMap<i64, MasteryStatus> =
                 sc.mastery.iter().map(|m| (m.id, m.status)).collect();
 
-            let mut lines: Vec<u8> = Vec::new();
+            let mut lines = std::fs::read("data/report_pace_head.md")
+                .map_err(|e| format!(
+                    "Unable to read file \"data/report_pace_head.md\": {}", &e
+                ))?;
 
             for gd in pd
                 .rows
@@ -373,12 +465,18 @@ impl<'a, 'b> ReportData<'a> {
                 crate::inter::write_raw_template("report_goal", &line, &mut lines)?;
             }
 
-            String::from_utf8(lines)
-                .map_err(|e| format!("Report goal lines are not UTF-8: {}", &e))?
+            let table = String::from_utf8(lines)
+                .map_err(|e| format!("Report goal lines are not UTF-8: {}", &e))?;
+            format_markdown_table(table).map_err(|e| format!(
+                "Unable to format pace goals table: {}", &e
+            ))?
         };
 
         let social_lines = {
-            let mut lines: Vec<u8> = Vec::new();
+            let mut lines = std::fs::read("data/report_social_head.md")
+                .map_err(|e| format!(
+                    "Unable to read file \"data/report_social_head.md\": {}", &e
+                ))?;
 
             for cat in glob.social_traits.iter() {
                 let line = SocialData::new(cat, sc.fall_social.get(cat), sc.spring_social.get(cat));
@@ -386,12 +484,15 @@ impl<'a, 'b> ReportData<'a> {
                 write_raw_template("social_goal", &line, &mut lines)?;
             }
 
-            String::from_utf8(lines).map_err(|e| {
+            let table = String::from_utf8(lines).map_err(|e| {
                 format!(
                     "Report social/emotional/behavioral lines are not UTF-8: {}",
                     &e
                 )
-            })?
+            })?;
+            format_markdown_table(table).map_err(|e| format!(
+                "Unable to format social/emotional/behavioral goals table: {}", &e
+            ))?
         };
 
         let exam_weight = match term {
@@ -451,10 +552,7 @@ They have {} chapter{} left before their {} academic year is complete.",
             academic_year,
             term: term.as_str(),
             pace_lines,
-            add,
-            sub,
-            mul,
-            div,
+            facts_table,
             social_lines,
             fall_reqs: reqs_complete(pd.semf_inc),
             spring_reqs: reqs_complete(pd.sems_inc),
@@ -474,6 +572,7 @@ They have {} chapter{} left before their {} academic year is complete.",
             fall_letter,
             spring_pct,
             spring_letter,
+            summary_lines: String::new(),
         };
 
         Ok(rd)
@@ -495,17 +594,25 @@ pub async fn generate_report_markup(
     let pd = PaceDisplay::from(&p, glob)?;
     let sc = glob.data().read().await.get_report_sidecar(uname).await?;
 
-    let rd = ReportData::assemble(pd, sc, term, glob)?;
+    let mut rd = ReportData::assemble(pd, sc, term, glob)?;
 
-    let template_name = match term {
-        Term::Fall => "fall_report",
-        Term::Spring => "spring_report",
+    let summary_name = match term {
+        Term::Fall => "fall_summary",
+        Term::Spring => "spring_summary",
         Term::Summer => {
             return Err("Summer reports not yet supported.".to_owned().into());
         }
     };
-    let text = render_raw_template(template_name, &rd)
-        .map_err(|e| format!("Error rendering template {:?}: {}", template_name, &e))?;
+
+    let summary_lines = render_raw_template(summary_name, &rd)
+        .map_err(|e| format!("Error rendering template {:?}: {}", &summary_name, &e))?;
+    let summary_lines = format_markdown_table(summary_lines).map_err(|e| format!(
+        "Unable to format {:?} table: {}", summary_name, &e
+    ))?;
+    rd.summary_lines = summary_lines;
+
+    let text = render_raw_template("report", &rd)
+        .map_err(|e| format!("Error rendering template {:?}: {}", summary_name, &e))?;
 
     Ok(text)
 }

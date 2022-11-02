@@ -45,9 +45,9 @@ impl std::str::FromStr for Term {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Fall" => Ok(Term::Fall),
-            "Spring" => Ok(Term::Spring),
-            "Summer" => Ok(Term::Summer),
+            "Fall" | "fall" => Ok(Term::Fall),
+            "Spring" | "spring" => Ok(Term::Spring),
+            "Summer" | "summer" => Ok(Term::Summer),
             _ => Err(format!("{:?} is not a valid Term.", s)),
         }
     }
@@ -1166,7 +1166,7 @@ impl<'a> PaceDisplay<'a> {
             Some(f) => {
                 let exam = f * p.student.fall_exam_fraction;
                 let tests = fall_tests * (1.0 - p.student.fall_exam_fraction);
-                let notices = p.student.fall_notices as f32;
+                let notices = (p.student.fall_notices as f32) * 0.01;
                 Some(exam + tests - notices)
             }
             None => None,
@@ -1176,7 +1176,7 @@ impl<'a> PaceDisplay<'a> {
             Some(f) => {
                 let exam = f * p.student.spring_exam_fraction;
                 let tests = spring_tests * (1.0 - p.student.spring_exam_fraction);
-                let notices = p.student.spring_notices as f32;
+                let notices = (p.student.spring_notices as f32) * 0.01;
                 Some(exam + tests - notices)
             }
             None => None,

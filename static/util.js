@@ -176,6 +176,8 @@ function api_request(req, description, on_success) {
     req.headers.set("x-camp-uname", AUTH.uname);
     req.headers.set("x-camp-key", AUTH.key);
 
+    console.log(`request ${rq_id}:`, req);
+
     RQ.add_pending(rq_id, description);
     fetch(req)
     .then(r => {
@@ -185,7 +187,5 @@ function api_request(req, description, on_success) {
     .catch(console.log)
     .finally(x => RQ.remove_pending(rq_id));
 }
-
-
 
 UTIL.ensure_on_load(UTIL.barf_about_old_browsers);

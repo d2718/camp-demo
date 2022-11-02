@@ -19,6 +19,7 @@ p { text-align: justify; }
 kbd { font-family: mplus1m, monospace; }
 .bad { color: #822; }
 .right { text-align: right; }
+.inline { display: inline-block; }
 
 button {
     border: 1px solid #888;
@@ -110,11 +111,37 @@ tbody tr.extra button {
     padding: 0.5em;
 }
 
+div#footer {
+    display: flex;
+    justify-content: space-between;
+    font-family: "PT Sans";
+}
+ul.dotless {
+    list-style-type: none;
+    padding: 0;
+}
+ul.dotless > li {
+    padding: 0.5ex;
+    border: 1px dotted white;
+}
+ul.dotless > li:hover { border: 1px dotted #888; }
+button#email-all { align-self: end; }
+
 textarea#email-text {
     min-width: 40vw;
     min-height: 40vh;
     padding: 1ex;
     margin: 1em;
 }
-
 dialog#edit-email p { text-align: center; }
+
+dialog#view-pdf {
+    width: calc(100vw - 2em);
+    height: calc(100vh - 2em);
+    overflow: scroll;
+}
+dialog#view-pdf object {
+    grid-column: span 2;
+    min-height: 75vh;
+    justify-self: stretch;
+}

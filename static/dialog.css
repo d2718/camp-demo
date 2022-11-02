@@ -1,9 +1,9 @@
 dialog.edit {
     position: fixed;
-    top: 1em;
+    top: 1rem;
     /*  If These next two property values seem like going around your ass to
         get to your elbow, it's because "right: 1em;" didn't work. */
-    left: calc(100vw - 1em);
+    left: calc(100vw - 1rem);
     transform: translate(-100%, 0);
 
     overflow: scroll;

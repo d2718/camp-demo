@@ -62,7 +62,7 @@ async fn main() {
     log::info!("Logging started.");
     log::info!("camp version {}", camp::VERSION);
 
-    let args: Vec<String> = std::env::args().collect();
+    //let _args: Vec<String> = std::env::args().collect();
 
     let glob = config::load_configuration("config.toml").await.unwrap();
     let glob = Arc::new(RwLock::new(glob));
@@ -83,6 +83,7 @@ async fn main() {
         .route("/login", post(handle_login))
         .layer(Extension(glob.clone()))
         .nest("/static", serve_static)
+        //.layer(middleware::from_fn(inter::log_request))
         .route("/", serve_root);
 
     axum::Server::bind(&addr)

@@ -26,7 +26,23 @@ const AUTH = {
             </div>
         </div>
         <div id="cals">{{calendars}}</div>
-        <div class="right">
+        <div id="footer">
+            <form name="archives" class="inline" id="archives">
+                <h4>Download all Reports</h4>
+                <fieldset><ul class="dotless">
+                    <li>
+                        <input type="radio" id="term-fall" name="term" value="fall" checked>
+                        <label for="term-fall">Fall Semester</label>
+                    </li>
+                    <li>
+                        <input type="radio" id="term-spring" name="term" value="spring">
+                        <label for="term-spring">Spring Semester</label>
+                    </li>
+                </ul></fieldset>
+                <div id="archive-buttons" class="inline">
+                    {{ archives }}
+                </div>
+            </form>
             <button id="email-all">
                 <img src="/static/error.svg">
                 <label>email all parents</label>
@@ -57,6 +73,15 @@ const AUTH = {
                 </button>
                 <button id="edit-email-confirm">
                     <label class="confirm">confirm</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="view-pdf" class="edit">
+            <form name="view-pdf" action="dialog">
+                <object type="application/pdf" id="view-pdf-object"></object>
+                <button id="view-pdf-cancel" name="close">
+                    <label class="cancel">done</label>
                 </button>
             </form>
         </dialog>

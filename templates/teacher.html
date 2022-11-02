@@ -202,10 +202,10 @@ const AUTH = {
                 <button id="edit-sidecar-cancel">
                     <label class="cancel">cancel</label>
                 </button>
-                <button id="edit-sidecar-fall" class="double">
+                <button id="edit-sidecar-fall" class="double" data-term="fall">
                     <label class="confirm">fall report</label>
                 </button>
-                <button id="edit-sidecar-spring">
+                <button id="edit-sidecar-spring" data-term="spring">
                     <label class="confirm">spring report</label>
                 </button>
                 
@@ -213,16 +213,26 @@ const AUTH = {
             </form>
         </dialog>
 
-        <dialog id="edit-report">
+        <dialog id="edit-report" class="edit">
             <h1>Edit Report Markdown</h1>
             <form name="edit-report" method="dialog">
                 <textarea name="text" id="edit-report-text"></textarea>
-                <button id="edit-report-cancel">
+                <button id="edit-report-cancel" class="double">
                     <label class="cancel">discard</label>
                 </button>
-                <span></span>
-                <span></span>
-                <button id="edit-report-save">
+                <button id="edit-report-save" name="save" class="double">
+                    <label class="confirm">save</label>
+                </button>
+            </form>
+        </dialog>
+
+        <dialog id="view-pdf" class="edit">
+            <form name="view-pdf" method="dialog">
+                <object type="application/pdf" id="view-pdf-object"></object>
+                <button id="view-pdf-cancel" name="discard" class="double">
+                    <label class="cancel">discard</label>
+                </button>
+                <button id="view-pdf-save" name="save" class="double">
                     <label class="confirm">save</label>
                 </button>
             </form>
