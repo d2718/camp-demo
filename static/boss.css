@@ -12,7 +12,7 @@
     box-sizing: border-box;
 }
 
-body { width: 100vw; padding: 1em; }
+body { padding: 1rem; }
 div.center { text-align: center; }
 ul { padding-left: 2em; }
 p { text-align: justify; }
@@ -23,11 +23,11 @@ kbd { font-family: mplus1m, monospace; }
 
 button {
     border: 1px solid #888;
-    border-radius: 0.5em;
-    padding: 0.5em;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.5em;
+    gap: 0.5rem;
 }
 button img { width: 1.5em; }
 
@@ -35,7 +35,7 @@ div#header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1em; gap: 1em;
+    padding: 1rem; gap: 1rem;
     background-color: #ddd;
 }
 
@@ -43,7 +43,7 @@ div#controls {
     display: inline-flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 1em;
+    gap: 1rem;
 }
 div#controls button label {
     width: 12ex;
@@ -54,7 +54,7 @@ div#cals {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    padding: 1em 0; gap: 1em;
+    padding: 1rem 0; gap: 1rem;
     align-items: flex-start;
 }
 
@@ -131,13 +131,13 @@ textarea#email-text {
     min-width: 40vw;
     min-height: 40vh;
     padding: 1ex;
-    margin: 1em;
+    margin: 1rem;
 }
 dialog#edit-email p { text-align: center; }
 
 dialog#view-pdf {
-    width: calc(100vw - 2em);
-    height: calc(100vh - 2em);
+    width: calc(100% - 2rem);
+    height: calc(100vh - 2rem);
     overflow: scroll;
 }
 dialog#view-pdf object {

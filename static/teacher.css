@@ -12,7 +12,7 @@
     box-sizing: border-box;
 }
 
-body { width: 100vw; padding: 1em; }
+body { padding: 1rem; }
 div.center { text-align: center; }
 ul { padding-left: 2em; }
 p { text-align: justify; }
@@ -41,8 +41,8 @@ div#cals {
     display: flex;
     flex-wrap: wrap;
     align-items: start;
-    gap: 1em;
-    margin-top: 1em;
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
 table.pace {
@@ -139,10 +139,10 @@ div#course-info {
     display: none;
     flex-direction: row;
     align-items: flex-start;
-    right: 1em; bottom: 1em;
-    padding: 1em;
+    right: 1rem; bottom: 1rem;
+    padding: 1rem;
     padding-right: 0;
-    gap: 1em;
+    gap: 1rem;
     background-color: white;
     border: 1ex solid #aaa;
     z-index: 3;
@@ -165,7 +165,7 @@ div#course-info cite::after { content: ')'; }
 div#course-info-show,
 div#course-info-hide {
     position: fixed;
-    bottom: 1em; right: 1em;
+    bottom: 1rem; right: 1rem;
     padding: 1ex;
     background-color: white;
     border: 1ex solid #aaa;
@@ -180,18 +180,18 @@ div#course-info-hide {
 }
 
 div#course-info-show img,
-div#course-info-hide img { width: 1.5em; }
+div#course-info-hide img { width: 1.5rem; }
 
-div#course-table-spacer { width: calc(1.5em + 3ex); }
+div#course-table-spacer { width: calc(1.5rem + 3ex); }
 
 dialog#edit-goal input#edit-goal-course { width: 60ex; }
 
 dialog#edit-sidecar {
-    width: calc(100vw - 2em);
+    width: calc(100% - 2rem);
 }
 p#edit-sidecar-meta {
     text-align: center;
-    margin: 1em;
+    margin: 1rem;
 }
 dialog#edit-sidecar > form {
     grid-template-columns: 2fr 1fr 1fr 2fr;
@@ -232,8 +232,8 @@ dialog#edit-sidecar > form button {
 
 dialog#edit-report,
 dialog#view-pdf {
-    width: calc(100vw - 2rem);
-    height: calc(100vh - 2rem);
+    width: calc(100% - 2rem);
+    height: calc(100% - 2rem);
     overflow: scroll;
 }
 dialog#edit-report textarea,
@@ -241,7 +241,7 @@ dialog#view-pdf object {
     grid-column: span 2;
     min-height: 75vh;
     justify-self: stretch;
-    padding: 1em;
+    padding: 1rem;
 }
 
 
