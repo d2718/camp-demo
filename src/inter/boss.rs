@@ -101,13 +101,15 @@ pub async fn login(base: BaseUser, form: LoginData, glob: Arc<RwLock<Glob>>) -> 
     serve_raw_template(StatusCode::OK, "boss", &data, vec![])
 }
 
-/// Hods data for rendering the `"boss_archive_button"` template.
+/// Holds data for rendering the `"boss_archive_button"` template.
 #[derive(Serialize)]
 struct TeacherData<'a> {
     uname: &'a str,
     name: &'a str,
 }
 
+/// Draw the section of the Boss view with the buttons for downloading
+/// archives of all of each teacher's reports at one time.
 async fn make_archive_buttons(glob: Arc<RwLock<Glob>>) -> Result<String, String> {
     let glob = glob.read().await;
 
@@ -143,7 +145,7 @@ struct GoalData<'a> {
     score: MiniString<SMALLSTORE>,
 }
 
-/// Render the `"boss_goal_row"` template ta [`Write`]r.
+/// Render the `"boss_goal_row"` template to a [`Write`]r.
 fn write_cal_goal<W: Write>(g: &GoalDisplay, buff: W) -> Result<(), String> {
     let row_class = match g.status {
         GoalStatus::Done => "done",
@@ -983,6 +985,14 @@ async fn download_archive(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Respo
     };
 
     let glob = glob.read().await;
+    let t = match glob.users.get(tuname) {
+        Some(User::Teacher(ref t)) => t,
+        _ => {
+            return respond_bad_request(format!(
+                "{:?} is not the uname of a teacher in the system.", tuname
+            ));
+        },
+    };
     let data = match glob.get_reports_archive_by_teacher(tuname, term).await {
         Ok(Some(bytes)) => bytes,
         Ok(None) => {
@@ -990,7 +1000,7 @@ async fn download_archive(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Respo
                 StatusCode::NOT_FOUND,
                 format!(
                     "{} does not have any {} reports completed.",
-                    tuname, term.as_str()
+                    &t.name, term.as_str()
                 ),
             ).into_response();
         },
