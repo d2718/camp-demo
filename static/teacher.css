@@ -204,12 +204,12 @@ dialog#edit-sidecar > form {
     grid-auto-rows: auto;
     font-size: smaller;
 }
-dialog#edit-sidecar > form > h3 {
+dialog#edit-sidecar > form h3 {
     text-align: center;
     grid-column: 1 / 5;
     justify-self: center;
 }
-dialog#edit-sidecar > form > h4 {
+dialog#edit-sidecar > form h4 {
     grid-column: span 2;
     justify-self: center;
 }
@@ -228,9 +228,7 @@ table#goal-mastery th {
     padding: 0.5ex;
 }
 table#goal-mastery th { background-color: #aaa; }
-dialog#edit-sidecar > form fieldset {
-    display: contents;
-}
+dialog#edit-sidecar > form fieldset { display: contents; }
 dialog#edit-sidecar > form button {
     font-size: initial;
     justify-self: stretch;

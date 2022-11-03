@@ -145,24 +145,24 @@ const AUTH = {
                 <h3>Fact Mastery</h3>
                 <fieldset id="fact-mastery-container">
                     <label for="edit-sidecar-add" class="r">Addition</label>
-                    <select name="add" id="edit-sidecar-add" class="l" required>
+                    <select name="add" id="edit-sidecar-add" class="l" required tabindex="1">
                         <option value="Mastered">Mastered</option>
                         <option value="Not">Not Mastered</option>
                         <option value="Ex">Excused</option>
                     </select>
-                    <select name="sub" id="edit-sidecar-sub" class="r" required>
+                    <select name="sub" id="edit-sidecar-sub" class="r" required tabindex="2">
                         <option value="Mastered">Mastered</option>
                         <option value="Not">Not Mastered</option>
                         <option value="Ex">Excused</option>
                     </select>
                     <label for="edit-sidecar-sub" class="l">Subtraction</label>
                     <label for="edit-sidecar-mul" class="r">Multiplication</label>
-                    <select name="mul" id="edit-sidecar-mul" class="l" required>
+                    <select name="mul" id="edit-sidecar-mul" class="l" required tabindex="3">
                         <option value="Mastered">Mastered</option>
                         <option value="Not">Not Mastered</option>
                         <option value="Ex">Excused</option>
                     </select>
-                    <select name="div" id="edit-sidecar-div" class="r" required>
+                    <select name="div" id="edit-sidecar-div" class="r" required tabindex="4">
                         <option value="Mastered">Mastered</option>
                         <option value="Not">Not Mastered</option>
                         <option value="Ex">Excused</option>
@@ -188,12 +188,14 @@ const AUTH = {
                 </fieldset>
 
                 <h3>Course Completion</h3>
-                <h4>Course(s) Completed Fall</h4><h4>Course(s) Completed Spring</h4>
-                <input name="complete-fall" id="edit-sidecar-complete-fall" class="double">
-                <input name="complete-spring" id="edit-sidecar-complete-spring" class="double">
-                <h4>Course(s) Completed Summer</h4><span class="double"></span>
-                <input name="complete-summer" id="edit-sidecar-complete-summer" class="double">
-                <span class="double"></span>
+                <fieldset id="completion-container">
+                    <h4>Course(s) Completed Fall</h4><h4>Course(s) Completed Spring</h4>
+                    <input name="complete-fall" id="edit-sidecar-complete-fall" class="double">
+                    <input name="complete-spring" id="edit-sidecar-complete-spring" class="double">
+                    <h4>Course(s) Completed Summer</h4><span class="double"></span>
+                    <input name="complete-summer" id="edit-sidecar-complete-summer" class="double">
+                    <span class="double"></span>
+                </fieldset>
 
                 <h3>Social/Emotional/Behavioral</h3>
                 <h4>Fall</h4><h4>Spring</h4>

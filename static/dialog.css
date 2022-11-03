@@ -45,3 +45,5 @@ dialog hr {
     border: 1px solid #bbb;
     margin: 1em 0;
 }
+
+dialog::backdrop { background: rgba(48, 16, 16, 0.4); }

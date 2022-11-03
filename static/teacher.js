@@ -806,7 +806,29 @@ async function show_sidecar(r) {
         goal_rows.appendChild(tr);
     }
 
+    // Set tabindexes.
+    let idx = 5;
+    for(const selector of goal_rows.querySelectorAll("select")) {
+        selector.setAttribute("tabindex", idx);
+        idx = idx + 1;
+    }
+    for(const box of document.querySelectorAll("fieldset#completion-container input")) {
+        box.setAttribute("tabindex", idx);
+        idx = idx + 1;
+    }
+    const traits = document.getElementById("trait-container");
+    for(const box of traits.querySelectorAll("input[data-term='fall']")) {
+        box.setAttribute("tabindex", idx);
+        idx = idx + 1;
+    }
+    for(const box of traits.querySelectorAll("input[data-term='spring']")) {
+        box.setAttribute("tabindex", idx);
+        idx = idx + 1;
+    }
+    
     DISPLAY.sidecar_edit.showModal();
+    // Why doesn't this show?
+    document.getElementById("edit-sidecar-add").focus({ focusVisible: true });
 }
 
 document.getElementById("edit-sidecar-cancel")
