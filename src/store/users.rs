@@ -186,9 +186,6 @@ impl Store {
     pub async fn delete_user(&self, t: &Transaction<'_>, uname: &str) -> Result<(), DbError> {
         log::trace!("Store::delete_user( {:?} ) called.", uname);
 
-        let n_goals = self.delete_goals_by_student(t, uname).await?;
-        log::trace!("Deleted {} Goals.", &n_goals);
-
         /*
         JFC the type annotations here.
 
@@ -197,6 +194,23 @@ impl Store {
         I absolutely invite you to make this suck less if you can.
         */
         let params: [&(dyn ToSql + Sync); 1] = [&uname];
+
+        tokio::try_join!(
+            t.execute("DELETE FROM completion WHERE uname = $1", &params[..]),
+            t.execute("DELETE FROM drafts WHERE uname = $1", &params[..]),
+            t.execute("DELETE FROM facts WHERE uname = $1", &params[..]),
+            t.execute(
+                "DELETE FROM nmr
+                    WHERE id in
+                    (SELECT id FROM goals WHERE uname = $1)",
+                &params[..]
+            ),
+            t.execute("DELETE FROM reports WHERE uname = $1", &params[..]),
+            t.execute("DELETE FROM social WHERE uname = $1", &params[..]),
+        )?;
+
+        let n_goals = self.delete_goals_by_student(t, uname).await?;
+        log::trace!("Deleted {} Goals.", &n_goals);
 
         let (s_del_res, t_del_res) = tokio::join!(
             t.execute("DELETE FROM students WHERE uname = $1", &params[..]),
@@ -935,8 +949,16 @@ This absolutely shouldn't be able to happen, but here we are.",
     pub async fn delete_students(&self, t: &Transaction<'_>) -> Result<Vec<String>, DbError> {
         log::trace!("Store::delete_students() called.");
 
-        t.execute("DELETE FROM goals", &[]).await?;
-        t.execute("DELETE FROM students", &[]).await?;
+        tokio::try_join!(
+            t.execute("DELETE FROM completion", &[]),
+            t.execute("DELETE FROM drafts", &[]),
+            t.execute("DELETE FROM facts", &[]),
+            t.execute("DELETE FROM nmr", &[]),
+            t.execute("DELETE FROM reports", &[]),
+            t.execute("DELETE FROM social", &[]),
+        )?;
+            t.execute("DELETE FROM goals", &[]).await?;
+            t.execute("DELETE FROM students", &[]).await?;
         let uname_rows = t
             .query(
                 "DELETE FROM users WHERE role = 'Student'
