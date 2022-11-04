@@ -10,11 +10,17 @@ use axum::{
     routing::{get, get_service, post},
     Extension, Form, Router,
 };
+use hyper::header::{HeaderName, HeaderValue};
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
 use tokio::sync::RwLock;
-use tower_http::services::fs::{ServeDir, ServeFile};
+use tower_http::{
+    services::fs::{ServeDir, ServeFile},
+    set_header::response::SetResponseHeaderLayer,
+};
 
 use camp::{config, config::Glob, inter, user::User};
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 async fn catchall_error_handler(e: std::io::Error) -> impl IntoResponse {
     (
@@ -84,7 +90,11 @@ async fn main() {
         .layer(Extension(glob.clone()))
         .nest("/static", serve_static)
         //.layer(middleware::from_fn(inter::log_request))
-        .route("/", serve_root);
+        .route("/", serve_root)
+        .layer(SetResponseHeaderLayer::appending(
+            HeaderName::from_static("x-camp-version"),
+            HeaderValue::from_static(VERSION)
+        ));
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
