@@ -499,7 +499,15 @@ function make_calendar_table(cal) {
     summary.appendChild(names);
 
     // Populate table's <THEAD> with #due/#done (pct).
-    const numbers = document.createElement("div");
+    const prog = document.createElement("div");
+    prog.setAttribute("class", "prog");
+    const hist = document.createElement("a");
+    hist.setAttribute("data-uname", cal.uname);
+    UTIL.set_text(hist, "History");
+    hist.addEventListener("click", request_history);
+    prog.appendChild(hist);
+    prog.appendChild(document.createElement("br"));
+    const numbers = document.createElement("span");
     let lead_pct = ratio2pct(cal.done_weight - cal.due_weight, cal.total_weight);
     if(cal.done_weight >= cal.due_weight) {
         lead_pct = "+" + lead_pct;
@@ -508,7 +516,8 @@ function make_calendar_table(cal) {
     }
     const num_txt = `done ${n_done} / ${n_due} due (${lead_pct})`;
     UTIL.set_text(numbers, num_txt);
-    summary.appendChild(numbers);
+    prog.appendChild(numbers);
+    summary.appendChild(prog);
 
     // Create row with extras-expander button and add-goal button.
     const more_tr = document.createElement("tr");
@@ -933,6 +942,8 @@ function field_response(r) {
             edit_markdown(r); break;
         case "display-pdf":
             show_pdf(r); break;
+        case "student-history":
+            show_history(r); break;
         case "none":
             /* Don't do anything. This is a success that requires no action. */
             break;
@@ -1479,3 +1490,51 @@ document.getElementById("view-pdf-save")
         evt.preventDefault();
         DISPLAY.pdf_view.close();
     }));
+
+function request_history(evt) {
+    evt.preventDefault();
+    const uname = this.getAttribute("data-uname");
+
+    const extra_headers = {
+        "x-camp-student": uname,
+    };
+    const pace = DATA.paces.get(uname);
+    const desc = `Requesting course history for ${pace.rest} ${pace.last}.`;
+    request_action("student-history", null, desc, extra_headers);
+}
+
+async function show_history(r) {
+    let comp = null;
+    await r.json().then(j => { comp = j; })
+    .catch(e => {
+        log_numbered_error(e);
+        return;
+    });
+
+    const dialog = document.getElementById("student-history");
+    const name_p = dialog.querySelector("p");
+    const cal = DATA.paces.get(r.headers.get("x-camp-student"));
+    UTIL.set_text(name_p, `${cal.rest} ${cal.last}`);
+    
+    let tbody = dialog.querySelector("tbody");
+    UTIL.clear(tbody);
+    for(const ent of comp) {
+        const crs = DATA.courses.get(ent.sym);
+        const year = `${ent.year}–${ent.year+1}`;
+
+        const row = document.createElement("tr");
+        row.appendChild(UTIL.text_td(year));
+        row.appendChild(UTIL.text_td(ent.term));
+        row.appendChild(UTIL.text_td(crs.title));
+        const em = document.createElement("em");
+        UTIL.set_text(em, crs.book);
+        const td = document.createElement("td");
+        td.appendChild(document.createTextNode("("));
+        td.appendChild(em);
+        td.appendChild(document.createTextNode(")"));
+        row.appendChild(td);
+        tbody.appendChild(row);
+    }
+
+    dialog.showModal();
+}

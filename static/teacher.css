@@ -91,6 +91,14 @@ table.pace div.summary span.full {
     font-size: 125%;
     margin-right: 1em;
 }
+table.pace div.summary div.prog { text-align: right; }
+table.pace div.summary div.prog a {
+    cursor: pointer;
+    text-decoration: 1px dotted underline black;
+}
+table.pace div.summary div.prog a:hover {
+    text-decoration: 1px solid underline black;
+}
 
 table.pace td div.fullwidth {
     display: flex;
@@ -260,6 +268,21 @@ dialog#view-pdf object {
     min-height: 75vh;
     justify-self: stretch;
     padding: 1rem;
+}
+
+dialog#student-history p {
+    text-align: center;
+    margin-bottom: 1em;
+}
+dialog#student-history table { 
+    margin-bottom: 1em;
+    border-collapse: collapse;
+}
+dialog#student-history table tr:nth-child(even) { background-color: #ddd; }
+dialog#student-history table td {
+    border: 0;
+    white-space: nowrap;
+    padding: 0.5ex;
 }
 
 a[rel="help"] {

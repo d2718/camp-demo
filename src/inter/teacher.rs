@@ -175,6 +175,7 @@ pub async fn api(
         "update-sidecar" => update_sidecar(&headers, body, glob.clone()).await,
         "render-report" => generate_report(&headers, body, glob.clone()).await,
         "discard-pdf" => discard_pdf(&headers, glob.clone()).await,
+        "student-history" => student_history(&headers, glob.clone()).await,
         x => respond_bad_request(format!("{:?} is not a recognized x-camp-action value.", &x)),
     }
 }
@@ -1410,4 +1411,39 @@ async fn discard_pdf(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
             )));
         }
     }
+}
+
+async fn student_history(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
+    let suname = match get_head("x-camp-student", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+
+    let hist = match glob.read().await.get_student_completion_history(suname).await {
+        Ok(hist) => hist,
+        Err(e) => {
+            log::error!(
+                "Error attempting to retrieve completion history for {:?}: {}",
+                suname, &e
+            );
+            return text_500(Some(format!(
+                "Error reading from database: {}", &e
+            )));
+        },
+    };
+
+    (
+        StatusCode::OK,
+        [
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("student-history"),
+            ),
+            (
+                HeaderName::from_static("x-camp-student"),
+                headers.get("x-camp-student").unwrap().clone(),
+            ),
+        ],
+        Json(&hist)
+    ).into_response()
 }

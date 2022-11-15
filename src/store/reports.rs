@@ -404,6 +404,7 @@ impl Store {
 
             hists.push(hist);
         }
+        hists.sort();
 
         Ok(hists)
     }
