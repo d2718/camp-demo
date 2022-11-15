@@ -119,11 +119,17 @@ become a `Student`.
 fn student_from_row(row: &Row) -> Result<StudentSidecar, DbError> {
     log::trace!("student_from_row( {:?} ) called.", row);
 
+    let teacher: Option<String> = row.try_get("teacher")?;
+    let teacher = match teacher {
+        Some(uname) => uname,
+        None => String::new(),
+    };
+
     let s = StudentSidecar {
         uname: row.try_get("uname")?,
         last: row.try_get("last")?,
         rest: row.try_get("rest")?,
-        teacher: row.try_get("teacher")?,
+        teacher,
         parent: row.try_get("parent")?,
         fall_exam_fraction: row.try_get("fall_exam_fraction")?,
         spring_exam_fraction: row.try_get("spring_exam_fraction")?,
@@ -657,6 +663,11 @@ impl Store {
         self.update_base_user(t, &u.base.uname, &u.base.email)
             .await?;
 
+        let teacher = match u.teacher.trim() {
+            "" => None,
+            x => Some(String::from(x)),
+        };
+
         let n_updated = t
             .execute(
                 "UPDATE students SET
@@ -668,7 +679,7 @@ impl Store {
                 &[
                     &u.last,
                     &u.rest,
-                    &u.teacher,
+                    &teacher,
                     &u.parent,
                     &u.fall_exam,
                     &u.spring_exam,

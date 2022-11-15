@@ -1018,10 +1018,12 @@ async fn show_sidecar(
         }
     }
 
+    let this_year = glob.academic_year();
+
     let data_guard = glob.data();
     let data = data_guard.read().await;
 
-    let sidecar = match data.get_report_sidecar(uname).await {
+    let sidecar = match data.get_report_sidecar(uname, this_year).await {
         Ok(sc) => sc,
         Err(e) => {
             log::error!("Error fetching sidecar for student {:?}: {}", uname, &e);
@@ -1112,10 +1114,12 @@ async fn update_sidecar(
         }
     }
 
+    let this_year = glob.academic_year();
+
     let data_guard = glob.data();
     let data = data_guard.read().await;
 
-    if let Err(e) = data.set_report_sidecar(&sidecar).await {
+    if let Err(e) = data.set_report_sidecar(&sidecar, this_year).await {
         log::error!("Error setting report sidecar: {}\ndata: {:?}", &e, &sidecar);
         let estr = format!("Error saving report sidecar info: {}", &e);
         return text_500(Some(estr));

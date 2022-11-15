@@ -23,8 +23,11 @@ use crate::{
     auth,
     auth::AuthResult,
     course::{Chapter, Course},
+    hist::{CompletionHistory, HistEntry},
     inter,
+    MiniString,
     pace::{Goal, Pace, Source, Term},
+    SMALLSTORE,
     store::Store,
     user::{Role, Student, User},
     UnifiedError,
@@ -386,6 +389,24 @@ impl<'a> Glob {
             .map_err(|e| format!("Error retrieving special dates from Data DB: {}", &e))?;
         self.dates = new_dates;
         Ok(())
+    }
+
+    /// Return the current academic year's starting year.
+    pub fn academic_year(&self) -> i32 {
+        match self.calendar.first() {
+            Some(d) => d.year(),
+            None => 0i32,
+        }
+    }
+
+    /// Return a string representation of the current academic year.
+    ///
+    /// For example: `"2022--2023"`
+    pub fn academic_year_string(&self) -> MiniString<SMALLSTORE> {
+        match self.calendar.first() {
+            Some(d) => crate::academic_year_from_start_date(d),
+            None => crate::academic_year_from_start_year(0),
+        }
     }
 
     /// Retrieve a reference to a given [`Course`] by its symbol.
@@ -876,7 +897,7 @@ impl<'a> Glob {
     pub async fn insert_goals(&self, goals: &[Goal]) -> Result<usize, UnifiedError> {
         log::trace!("Glob::insert_goals( [ {} Goals ] ) called.", &goals.len());
 
-        // First we want to check the unames courses on all the goals and
+        // First we want to check the unames and courses on all the goals and
         // ensure those exist before we start trying to insert. This will
         // allow us to produce a better error message for the user.
         {
@@ -1150,12 +1171,78 @@ impl<'a> Glob {
         }
     }
 
-    /**
-    Delete all Goals and Students.
+    pub async fn get_student_completion_history(
+        &self,
+        uname: &str
+    ) -> Result<Vec<HistEntry>, UnifiedError> {
+        log::trace!("Glob::get_student_completion_history( {:?} ) called.", uname);
 
-    This is meant to clear the database out between academic years.
+        if !matches!(
+            self.users.get(uname),
+            Some(User::Student(_))
+        ) {
+            return Err(format!(
+                "{:?} is not a student in the database", uname
+            ).into());
+        }
+
+        let hist = self.data().read().await.get_completion_history(uname).await
+            .map_err(|e| format!(
+                "error reading completion history from database: {}", &e
+            ))?;
+
+        Ok(hist)
+    }
+
+    pub async fn get_completion_history_by_teacher(
+        &self,
+        tuname: &str
+    ) -> Result<HashMap<String, Vec<HistEntry>>, UnifiedError> {
+        log::trace!("Glob::get_completion_history_by_teacher( {:?} ) called.", tuname);
+
+        if matches!(
+            self.users.get(tuname),
+            Some(User::Teacher(_))
+        ) {
+            return Err(format!(
+                "{:?} is not a teacher in the database", tuname
+            ).into());
+        }
+
+        let hists = self.data().read().await.get_completion_histories_by_teacher(tuname).await
+            .map_err(|e| format!(
+                "error reading completion history from database: {:?}", &e
+            ))?;
+
+        Ok(hists)
+    }
+
+    /**
+    Delete all Student Goals, sidecar info, and report data (but _not_
+    course completion data).
+
+    This is meant to clear the database out between academic years. This
+    does _not_ remove any Students from the database.
     */
-    pub async fn yearly_data_nuke(&mut self) -> Result<(), UnifiedError> {
+    pub async fn yearly_data_nuke(&self) -> Result<(), UnifiedError> {
+        log::trace!("Glob::yearly_data_nuke() called.");
+    
+        let data_arc = self.data();
+        let data = data_arc.read().await;
+        let mut client = data.connect().await?;
+        let t = client.transaction().await?;
+    
+        let _ = tokio::try_join!(
+            Store::yearly_clear_sidecars(&t),
+            Store::yearly_clear_goals(&t),
+        ).map_err(|e| format!(
+            "Error clearing yearly data from database: {}", &e
+        ))?;
+    
+        Ok(())
+    }
+
+/*     pub async fn yearly_data_nuke(&mut self) -> Result<(), UnifiedError> {
         log::trace!("Glob::yearly_data_nuke() called.");
 
         let data_arc = self.data();
@@ -1179,7 +1266,7 @@ impl<'a> Glob {
             "Error removing tranche of {} users from the Auth DB ({}); Auth and Data DBs may be out of synch. The database may need manual attention from someone who understands databases. In any case, it is recommended to log back in before you continue.",
             &uname_refs.len(), &e
         ).into())
-    }
+    } */
 }
 
 async fn insert_default_admin_into_data_db(cfg: &Cfg, data: &Store) -> Result<User, UnifiedError> {

@@ -33,3 +33,5 @@ IDK, maybe something like [this](https://editorjs.io/)?
 
 ~~Downloading a report archive should check to see if there are any
 to download before making an archive.~~ Done.
+
+Fix the size of the cancel "X" in the error messages <DIV>.

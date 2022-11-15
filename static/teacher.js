@@ -713,6 +713,15 @@ function populate_traits(r) {
     .catch(log_numbered_error);
 }
 
+function make_complete_checkbox(crs, term) {
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.id  = `edit-sidecar-complete-${crs.sym}-${term}`;
+    box.setAttribute("data-sym", crs.sym);
+    box.setAttribute("data-term", term);
+    return box;
+}
+
 async function show_sidecar(r) {
     let car = null;
     await r.json().then(j => { car = j; })
@@ -720,6 +729,8 @@ async function show_sidecar(r) {
         log_numbered_error(e);
         return;
     });
+
+    console.log(car);
 
     const uname = car.uname;
     const pace = DATA.paces.get(car.uname);
@@ -753,19 +764,21 @@ async function show_sidecar(r) {
         ipt.value = score;
     }
 
-    form["complete-fall"].value = car.fall_complete;
-    form["complete-spring"].value = car.spring_complete;
+/*     form["complete-fall"].value = car.fall_complete;
+    form["complete-spring"].value = car.spring_complete; */
 
     const mastery_map = new Map();
     for(const m of car.mastery) {
         mastery_map.set(m.id, m.status);
     }
+    const course_symbols = new Set();
 
     const goal_rows = DISPLAY.sidecar_edit.querySelector("table#goal-mastery > tbody");
     UTIL.clear(goal_rows);
     for(const g of pace.goals) {
         const tr = document.createElement("tr");
         const course = DATA.courses.get(g.sym);
+        course_symbols.add(g.sym);
         const chapt = DATA.chapters.get(course.chapters[g.seq]);
         const ch_name = `${course.title} ${chapt.title}`;
 
@@ -804,6 +817,42 @@ async function show_sidecar(r) {
         tr.appendChild(td);
 
         goal_rows.appendChild(tr);
+    }
+
+    const complete_bodies = {
+        "Fall": document.querySelector("figure#edit-sidecar-fall-complete ul"),
+        "Spring": document.querySelector("figure#edit-sidecar-spring-complete ul"),
+        "Summer": document.querySelector("figure#edit-sidecar-summer-complete ul"),
+    };
+
+    const courses = Array.from(course_symbols).map(sym => DATA.courses.get(sym));
+    courses.sort((a, b) => Math.sign(a.level - b.level));
+
+    for(const term of ["Fall", "Spring", "Summer"]) {
+        UTIL.clear(complete_bodies[term]);
+        for(const crs of courses) {
+            const ipt = make_complete_checkbox(crs, term);
+            const lab = document.createElement("label");
+            lab.setAttribute("for", ipt.id);
+            UTIL.set_text(lab, crs.title);
+            const item = document.createElement("li");
+            item.appendChild(ipt);
+            item.appendChild(lab);
+            complete_bodies[term].appendChild(item);
+        }
+    }
+
+    for(const sym of car.fall_complete) {
+        let box = complete_bodies["Fall"].querySelector(`input[data-sym="${sym}"]`);
+        box.checked = true;
+    }
+    for(const sym of car.spring_complete) {
+        let box = complete_bodies["Spring"].querySelector(`input[data-sym="${sym}"]`);
+        box.checked = true;
+    }
+    for(const sym of car.summer_complete) {
+        let box = complete_bodies["Summer"].querySelector(`input[data-sym="${sym}"]`);
+        box.checked = true;
     }
 
     // Set tabindexes.
@@ -1305,9 +1354,22 @@ function save_sidecar(evt) {
         sc[name] = social;
     }
 
-    sc["fall_complete"] = form["complete-fall"].value.trim();
+    sc["fall_complete"] = Array.from(
+        document.querySelectorAll(
+            "figure#edit-sidecar-fall-complete input:checked"
+        )).map(ipt => ipt.getAttribute("data-sym"));
+    sc["spring_complete"] = Array.from(
+        document.querySelectorAll(
+            "figure#edit-sidecar-spring-complete input:checked"
+        )).map(ipt => ipt.getAttribute("data-sym"));
+    sc["summer_complete"] = Array.from(
+        document.querySelectorAll(
+            "figure#edit-sidecar-summer-complete input:checked"
+        )).map(ipt => ipt.getAttribute("data-sym"));
+
+/*     sc["fall_complete"] = form["complete-fall"].value.trim();
     sc["spring_complete"] = form["complete-spring"].value.trim();
-    sc["summer_complete"] = form["complete-summer"].value.trim();
+    sc["summer_complete"] = form["complete-summer"].value.trim(); */
 
     let mastery_fieldset = form.querySelector("fieldset#goal-mastery-container");
     let mastery_inputs = mastery_fieldset.querySelectorAll("select");

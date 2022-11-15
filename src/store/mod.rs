@@ -54,6 +54,12 @@ static SCHEMA: &[(&str, &str, &str)] = &[
         )",
         "DROP TABLE custom_chapters",
     ),
+    /*
+    Three tables for users: users, teachers, students.
+
+    Admin and Boss roles require nothing beyond data in the users table.
+    Extra info for Teachers and Students in their respective tables.
+    */
     (
         "SELECT FROM information_schema.tables WHERE table_name = 'users'",
         "CREATE TABLE users (
@@ -89,6 +95,13 @@ static SCHEMA: &[(&str, &str, &str)] = &[
         )",
         "DROP TABLE students",
     ),
+    /*
+    Two tables of calendar info.
+
+    calendar holds just a list of "working days" as used by the autopacer.
+    dates holds special dates (so far this is just the ends of the Spring
+    and Fall Semesters).
+    */
     (
         "SELECT FROM information_schema.tables WHERE table_name = 'calendar'",
         "CREATE TABLE calendar ( day DATE UNIQUE NOT NULL )",
@@ -102,16 +115,7 @@ static SCHEMA: &[(&str, &str, &str)] = &[
         )",
         "DROP TABLE dates",
     ),
-    (
-        "SELECT FROM information_schema.tables WHERE table_name = 'custom_chapters'",
-        "CREATE TABLE custom_chapters (
-            id BIGSERIAL PRIMARY KEY,
-            uname   TEXT REFERENCES user(uname),
-            title   TEXT NOT NULL,
-            weight  REAL
-        )",
-        "DROP TABLE custom_chapters",
-    ),
+    // Student pace goals.
     (
         "SELECT FROM information_schema.tables WHERE table_name = 'goals'",
         "CREATE TABLE goals (
@@ -164,7 +168,8 @@ static SCHEMA: &[(&str, &str, &str)] = &[
         "CREATE TABLE completion (
             uname   TEXT REFERENCES students(uname),
             term    TEXT,
-            courses TEXT
+            courses TEXT,
+            year    INT
         )",
         "DROP TABLE completion",
     ),

@@ -207,9 +207,9 @@ pub struct ReportSidecar {
     pub facts: Option<FactSet>,
     pub fall_social: HashMap<String, String>,
     pub spring_social: HashMap<String, String>,
-    pub fall_complete: String,
-    pub spring_complete: String,
-    pub summer_complete: Option<String>,
+    pub fall_complete: Vec<String>,
+    pub spring_complete: Vec<String>,
+    pub summer_complete: Vec<String>,
     pub mastery: Vec<Mastery>,
 }
 
@@ -337,6 +337,7 @@ pub struct ReportData<'a> {
     spring_remain: usize,
     fall_complete: String,
     spring_complete: String,
+    summer_complete: String,
     requirement_statement: String,
     fall_tests: MiniString<SMALLSTORE>,
     spring_tests: MiniString<SMALLSTORE>,
@@ -390,6 +391,34 @@ fn letter_grade(frac: Option<f32>) -> &'static str {
     }
 }
 
+fn collect_course_names<S>(syms: &[S], glob: &Glob) -> Result<String, String>
+where S: AsRef<str> + std::fmt::Debug
+{
+    log::trace!("collect_course_names( {:?}, [ &Glob ] ) called.", syms);
+
+    let target = match syms.len() {
+        0 => { return Ok(String::new()); },
+        n => n - 1,
+    };
+
+    let mut list = String::new();
+    for (n, sym) in syms.iter().enumerate() {
+        let sym = sym.as_ref();
+        match glob.course_by_sym(sym) {
+            Some(crs) => { list.push_str(&crs.title); },
+            None => { return Err(format!(
+                "{:?} is not a valid course symbol.", sym
+            )); },
+        }
+        if n < target {
+            list.push(',');
+            list.push(' ');
+        }
+    }
+    
+    Ok(list)
+}
+
 impl<'a, 'b> ReportData<'a> {
     fn assemble(
         mut pd: PaceDisplay<'a>,
@@ -397,19 +426,7 @@ impl<'a, 'b> ReportData<'a> {
         term: Term,
         glob: &Glob,
     ) -> Result<ReportData<'a>, String> {
-        let academic_year = {
-            let mut years: MiniString<SMALLSTORE> = MiniString::new();
-            match glob.calendar.first() {
-                Some(d) => {
-                    let cur_year = d.year();
-                    write!(&mut years, "{}--{}", cur_year, cur_year + 1).unwrap();
-                }
-                None => {
-                    write!(&mut years, "0000--0000").unwrap();
-                }
-            }
-            years
-        };
+        let academic_year = glob.academic_year_string();
 
         let facts_status = match sc.facts {
             None => FactSetDisplay::default(),
@@ -545,6 +562,19 @@ They have {} chapter{} left before their {} academic year is complete.",
             }
         };
 
+        let fall_complete = collect_course_names(&sc.fall_complete, glob)
+            .map_err(|e| format!(
+                "error writing list of coures completed Fall Semester: {}", &e
+            ))?;
+        let spring_complete = collect_course_names(&sc.spring_complete, glob)
+            .map_err(|e| format!(
+                "error writing list of courses completed Spring Semester: {}", &e
+            ))?;
+        let summer_complete = collect_course_names(&sc.summer_complete, glob)
+            .map_err(|e| format!(
+                "error writing list of courses completed during Summer: {}", &e
+            ))?;
+
         let rd = ReportData {
             rest: pd.rest,
             last: pd.last,
@@ -559,8 +589,9 @@ They have {} chapter{} left before their {} academic year is complete.",
             fall_remain,
             spring_remain,
             requirement_statement,
-            fall_complete: sc.fall_complete,
-            spring_complete: sc.spring_complete,
+            fall_complete,
+            spring_complete,
+            summer_complete,
             fall_tests,
             spring_tests,
             fall_notices: pd.fall_notices,
@@ -590,9 +621,11 @@ pub async fn generate_report_markup(
         &term
     );
 
+    let this_year = glob.academic_year();
+
     let p = glob.get_pace_by_student(uname).await?;
     let pd = PaceDisplay::from(&p, glob)?;
-    let sc = glob.data().read().await.get_report_sidecar(uname).await?;
+    let sc = glob.data().read().await.get_report_sidecar(uname, this_year).await?;
 
     let mut rd = ReportData::assemble(pd, sc, term, glob)?;
 

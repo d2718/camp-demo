@@ -24,7 +24,8 @@ CREATE TABLE social (
 CREATE TABLE completion (
     uname   TEXT REFERENCES students(uname),
     term    TEXT,   /* one of { 'Fall', 'Spring', 'Summer' } */
-    courses TEXT
+    courses TEXT,
+    year    INT
 );
 
 CREATE TABLE drafts (
@@ -39,7 +40,10 @@ CREATE TABLE reports (
     doc     bytea
 );
 */
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    str::FromStr,
+};
 
 use futures::{
     stream::{FuturesUnordered, StreamExt},
@@ -51,7 +55,11 @@ use tokio_postgres::{
 };
 
 use super::{DbError, Store};
-use crate::{blank_string_means_none, pace::Term, report::*};
+use crate::{
+    blank_string_means_none,
+    hist::HistEntry,
+    pace::Term, report::*,
+};
 
 fn row2mastery(row: &Row) -> Result<Mastery, DbError> {
     let status: Option<&str> = row.try_get("status")?;
@@ -296,33 +304,47 @@ impl Store {
         Ok(map)
     }
 
-    pub async fn set_completion(
+    pub async fn set_completion<S>(
         t: &Transaction<'_>,
         uname: &str,
+        year: i32,
         term: Term,
-        courses: &str,
-    ) -> Result<(), DbError> {
+        courses: &[S],
+    ) -> Result<(), DbError>
+    where S: AsRef<str> + ToSql + std::fmt::Debug + Sync
+    {
         log::trace!(
-            "Store::set_completion( [ &T ], {:?}, {:?}, {:?} ) called.",
+            "Store::set_completion( [ &T ], {:?}, {:?}, {} {:?} ) called.",
             uname,
             &term,
-            courses
+            year,
+            courses,
         );
 
-        let params: [&(dyn ToSql + Sync); 3] = [&uname, &term.as_str(), &courses];
+        t.execute(
+            "DELETE FROM completion
+                WHERE uname = $1 AND term = $2 AND year = $3",
+            &[&uname, &term.as_str(), &year]
+        ).await.map_err(|e| format!(
+            "error clearing old completion values: {}", &e
+        ))?;
 
-        try_join!(
+        let insert_statement = t.prepare_typed(
+            "INSERT INTO completion (uname, term, courses, year)
+            VALUES ($1, $2, $3, $4)",
+            &[Type::TEXT, Type::TEXT, Type::TEXT, Type::INT4]
+        ).await.map_err(|e| format!(
+            "error preparing completion insertion statement: {}", &e
+        ))?;
+
+        for crs in courses.iter() {
             t.execute(
-                "DELETE FROM completion WHERE uname = $1 AND term = $2",
-                &params[..2]
-            ),
-            t.execute(
-                "INSERT INTO completion (uname, term, courses)
-                    VALUES ($1, $2, $3)",
-                &params[..]
-            )
-        )
-        .map_err(|e| format!("Unable to clear old or set new completion value: {}", &e))?;
+                &insert_statement,
+                &[&uname, &term.as_str(), &crs, &year]
+            ).await.map_err(|e| format!(
+                "error inserting completed course {:?}: {}", crs, &e
+            ))?;
+        }
 
         Ok(())
     }
@@ -330,33 +352,102 @@ impl Store {
     pub async fn get_completion(
         t: &Transaction<'_>,
         uname: &str,
+        year: i32,
         term: Term,
-    ) -> Result<Option<String>, DbError> {
+    ) -> Result<Vec<String>, DbError> {
         log::trace!(
             "Store::get_completion( [ &T ], {:?}, {:?} ) called.",
             uname,
             &term
         );
 
-        let opt = match t
-            .query_opt(
-                "SELECT courses FROM completion
-                WHERE uname = $1 AND term = $2",
-                &[&uname, &term.as_str()],
-            )
-            .await?
-        {
-            Some(row) => {
-                let courses: Option<&str> = row.try_get("courses")?;
-                blank_string_means_none(courses).map(|cstr| cstr.to_owned())
-            }
-            None => None,
-        };
+        let rows = t.query(
+            "SELECT courses FROM completion
+            WHERE uname = $1 AND term = $2 AND year = $3",
+            &[&uname, &term.as_str(), &year]
+        ).await?;
 
-        Ok(opt)
+        let mut courses: Vec<String> = Vec::with_capacity(rows.len());
+
+        for row in rows.iter() {
+            let sym: String = row.try_get("courses")?;
+            courses.push(sym);
+        }
+
+        Ok(courses)
     }
 
-    pub async fn set_report_sidecar(&self, sidecar: &ReportSidecar) -> Result<(), DbError> {
+    pub async fn get_completion_history(
+        &self,
+        uname: &str
+    ) -> Result<Vec<HistEntry>, DbError> {
+        log::trace!(
+            "Store::get_completion_history( {:?} ) called.", uname
+        );
+
+        let client = self.connect().await?;
+        let rows = client.query(
+            "SELECT year, term, courses FROM completion
+                WHERE uname = $1",
+            &[&uname]
+        ).await?;
+
+        let mut hists: Vec<HistEntry> = Vec::with_capacity(rows.len());
+        for row in rows.iter() {
+            let term_str: &str = row.try_get("term")?;
+            let term = Term::from_str(term_str)?;
+            let hist = HistEntry {
+                sym: row.try_get("courses")?,
+                year: row.try_get("year")?,
+                term,
+            };
+
+            hists.push(hist);
+        }
+
+        Ok(hists)
+    }
+
+    pub async fn get_completion_histories_by_teacher(
+        &self,
+        tuname: &str
+    ) -> Result<HashMap<String, Vec<HistEntry>>, DbError> {
+        log::trace!(
+            "Store::get_completion_histories_by_teacher( {:?} ) called.", tuname
+        );
+
+        let client =self.connect().await?;
+        let rows = client.query(
+            "SELECT completion.uname, completion.term,
+                    completion.year, completion.courses
+                FROM completion INNER JOIN students
+                    ON completion.uname = students.uname
+                WHERE students.teacher = $1",
+            &[&tuname]
+        ).await?;
+
+        let mut map: HashMap<String, Vec<HistEntry>> = HashMap::new();
+        for row in rows.iter() {
+            let uname: String = row.try_get("uname")?;
+            let term_str: &str = row.try_get("term")?;
+            let term = Term::from_str(term_str)?;
+            let hist = HistEntry {
+                sym: row.try_get("courses")?,
+                year: row.try_get("year")?,
+                term,
+            };
+
+            map.entry(uname).or_default().push(hist);
+        }
+
+        Ok(map)
+    }
+
+    pub async fn set_report_sidecar(
+            &self,
+            sidecar: &ReportSidecar,
+            year: i32
+        ) -> Result<(), DbError> {
         log::trace!("Store::set_report_sidecar( {:?} ) called.", &sidecar.uname);
 
         let uname = &sidecar.uname;
@@ -373,8 +464,9 @@ impl Store {
             Store::set_facts(&t, uname, &fact_set),
             Store::set_social(&t, uname, Term::Fall, &sidecar.fall_social),
             Store::set_social(&t, uname, Term::Spring, &sidecar.spring_social),
-            Store::set_completion(&t, uname, Term::Fall, &sidecar.fall_complete),
-            Store::set_completion(&t, uname, Term::Spring, &sidecar.spring_complete),
+            Store::set_completion(&t, uname, year, Term::Fall, &sidecar.fall_complete),
+            Store::set_completion(&t, uname, year, Term::Spring, &sidecar.spring_complete),
+            Store::set_completion(&t, uname, year, Term::Summer, &sidecar.summer_complete),
             Store::set_mastery(&t, &sidecar.mastery),
         ) {
             return Err(format!("Unable to write sidecar data to database: {}", &e).into());
@@ -383,7 +475,11 @@ impl Store {
         t.commit().await.map_err(|e| e.into())
     }
 
-    pub async fn get_report_sidecar(&self, uname: &str) -> Result<ReportSidecar, DbError> {
+    pub async fn get_report_sidecar(
+            &self,
+            uname: &str,
+            year: i32
+        ) -> Result<ReportSidecar, DbError> {
         log::trace!("Store::get_report_sidecar( {:?} ) called.", uname);
 
         let mut client = self.connect().await?;
@@ -401,16 +497,13 @@ impl Store {
             Store::get_facts(&t, uname),
             Store::get_social(&t, uname, Term::Fall),
             Store::get_social(&t, uname, Term::Spring),
-            Store::get_completion(&t, uname, Term::Fall),
-            Store::get_completion(&t, uname, Term::Spring),
-            Store::get_completion(&t, uname, Term::Summer),
+            Store::get_completion(&t, uname, year, Term::Fall),
+            Store::get_completion(&t, uname, year, Term::Spring),
+            Store::get_completion(&t, uname, year, Term::Summer),
             Store::get_mastery(&t, uname),
         )?;
 
         t.commit().await?;
-
-        let fall_complete = fall_complete.unwrap_or_default();
-        let spring_complete = spring_complete.unwrap_or_default();
 
         let car = ReportSidecar {
             uname: uname.to_string(),
@@ -569,6 +662,25 @@ impl Store {
             "DELETE FROM reports WHERE uname = $1 AND term = $2",
             &[&uname, &term.as_str()],
         ).await?;
+
+        Ok(())
+    }
+
+    /**
+    Clear all sidecar student data for the year.
+
+    Leaves completion data intact, because that's important to keep.
+    */
+    pub async fn yearly_clear_sidecars(t: &Transaction<'_>) -> Result<(), DbError> {
+        log::trace!("Store::yearly_clear_sidecars( [ T ] ) called.");
+
+        let _ = tokio::try_join!(
+            t.execute("DELETE FROM nmr", &[]),
+            t.execute("DELETE FROM facts", &[]),
+            t.execute("DELETE FROM social", &[]),
+            t.execute("DELETE FROM drafts", &[]),
+            t.execute("DELETE FROM reports", &[]),
+        )?;
 
         Ok(())
     }

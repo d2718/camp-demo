@@ -3,11 +3,12 @@ The `Goal` struct and `Pace` calendars, for internally represending pace
 calendar information.
 */
 use std::{
-    cmp::Ordering,
+    cmp::{Ord, Ordering, PartialOrd},
     collections::HashMap,
     io::{Read, Write},
 };
 
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use time::{Date, Month};
 
@@ -17,7 +18,7 @@ use crate::{
     MiniString, MEDSTORE,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Term {
     Fall,
     Spring,
@@ -591,6 +592,8 @@ impl Pace {
             due_weight,
             done_weight,
         };
+
+        log::debug!("{:#?}", &p);
 
         Ok(p)
     }

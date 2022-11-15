@@ -361,4 +361,13 @@ impl Store {
 
         Ok(goals)
     }
+
+    /// Clear all student Goal data for the year.
+    pub async fn yearly_clear_goals(t: &Transaction<'_>) -> Result<(), DbError> {
+        log::trace!("Store::yearly_clear_goals( [ T ] ) called.");
+
+        let _ = t.execute("DELETE FROM goals", &[]).await?;
+
+        Ok(())
+    }
 }

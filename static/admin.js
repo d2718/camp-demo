@@ -508,7 +508,11 @@ function populate_teacher_selector(teacher_uname) {
         }
     }
 
-    if(teacher_uname) {
+    if(teacher_uname == "" || Boolean(teacher_uname)) {
+        const null_opt = document.createElement("option");
+        UTIL.set_text(null_opt, "[ None ]");
+        null_opt.value = "";
+        sel.appendChild(null_opt)
         sel.value = teacher_uname;
     }
 }

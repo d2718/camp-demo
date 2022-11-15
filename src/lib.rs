@@ -1,6 +1,6 @@
 use std::{
     fmt::{Display, Write},
-    ops::Deref,
+    ops::{Deref, DerefMut},
 };
 
 use once_cell::sync::Lazy;
@@ -11,6 +11,7 @@ use time::{format_description::FormatItem, macros::format_description, Date};
 pub mod auth;
 pub mod config;
 pub mod course;
+pub mod hist;
 pub mod inter;
 pub mod pace;
 pub mod report;
@@ -199,6 +200,12 @@ impl<A: smallvec::Array<Item = u8>> Deref for MiniString<A> {
     }
 }
 
+impl<A: smallvec::Array<Item = u8>> DerefMut for MiniString<A> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<A: smallvec::Array<Item = u8>> std::io::Write for MiniString<A> {
     fn write(&mut self, buff: &[u8]) -> std::io::Result<usize> {
         use std::io::{Error, ErrorKind};
@@ -249,6 +256,19 @@ pub fn format_maybe_date(
         Some(d) => format_date(format, d),
         None => Ok(MiniString::new()),
     }
+}
+
+pub fn academic_year_from_start_year(year: i32) -> MiniString<SMALLSTORE> {
+    let mut years: MiniString<SMALLSTORE> = MiniString::new();
+    match year {
+        0 => { write!(&mut years, "0000--0000").unwrap(); },
+        n => { write!(&mut years, "{}--{}", n, n + 1).unwrap(); },
+    }
+    years
+}
+
+pub fn academic_year_from_start_date(d: &Date) -> MiniString<SMALLSTORE> {
+    academic_year_from_start_year(d.year())
 }
 
 #[cfg(test)]

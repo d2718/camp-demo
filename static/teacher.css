@@ -233,6 +233,20 @@ dialog#edit-sidecar > form button {
     font-size: initial;
     justify-self: stretch;
 }
+dialog#edit-sidecar fieldset#completion-container figure { margin: 1ex; }
+dialog#edit-sidecar fieldset#completion-container figure.r { text-align: right; }
+dialog#edit-sidecar fieldset#completion-container figure.l { text-align: center; }
+dialog#edit-sidecar fieldset#completion-container figure figcaption {
+    white-space: nowrap;
+}
+dialog#edit-sidecar fieldset#completion-container ul {
+    display: inline-block;
+    text-align: left;
+    padding: 0;
+    list-style-type: none;
+}
+dialog#edit-sidecar fieldset#completion-container ul li { margin: 0.5ex; }
+dialog#edit-sidecar fieldset#completion-container ul li > * { margin-right: 1ex; }
 
 dialog#edit-report,
 dialog#view-pdf {
