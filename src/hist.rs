@@ -28,9 +28,3 @@ impl PartialOrd for HistEntry {
         Some(self.cmp(other))
     }
 }
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CompletionHistory {
-    pub uname: String,
-    pub hist: Vec<HistEntry>
-}

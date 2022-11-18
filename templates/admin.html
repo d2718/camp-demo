@@ -300,6 +300,33 @@ const AUTH = {
                     <label class="confirm">confirm</label>
                 </button>
             </form>
+            <table id="alter-student-completion">
+                <caption>Course Completion History</caption>
+                <tbody id="alter-student-completion-history"></tbody>
+                <tbody id="add-completion-history">
+                    <tr>
+                        <td colspan="2">
+                            <input type="text" name="course" list="course-names">
+                        </td>
+                        <td>
+                            <select>
+                                <option>Fall</option>
+                                <option>Spring</option>
+                                <option>Summer</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="year">
+                            <span id="add-completion-spring-year"></span>
+                        </td>
+                        <td>
+                            <button id="add-completion-history-add">
+                                <label class="confirm">+add+</label>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
             <hr>
             <div class="center">
                 <button id="delete-student">
@@ -455,6 +482,8 @@ const AUTH = {
                 </ul>
             </div>
         </div>
+    
+    <datalist id="course-names"></datalist>
 
     <script src="/static/util.js"></script>
     </body>

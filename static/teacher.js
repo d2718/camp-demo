@@ -852,16 +852,34 @@ async function show_sidecar(r) {
     }
 
     for(const sym of car.fall_complete) {
-        let box = complete_bodies["Fall"].querySelector(`input[data-sym="${sym}"]`);
-        box.checked = true;
+        const box = complete_bodies["Fall"].querySelector(`input[data-sym="${sym}"]`);
+        if(box) {
+            box.checked = true;
+        } else {
+            const crs = DATA.courses.get(sym);
+            const msg = `Course "${sym}" (${crs.title} from ${crs.book}) marked as complete, but no chapters from that course were assigned or completed this year.`;
+            RQ.add_err(msg);
+        }
     }
     for(const sym of car.spring_complete) {
-        let box = complete_bodies["Spring"].querySelector(`input[data-sym="${sym}"]`);
-        box.checked = true;
+        const box = complete_bodies["Spring"].querySelector(`input[data-sym="${sym}"]`);
+        if(box) {
+            box.checked = true;
+        } else {
+            const crs = DATA.courses.get(sym);
+            const msg = `Course "${sym}" (${crs.title} from ${crs.book}) marked as complete, but no chapters from that course were assigned or completed this year.`;
+            RQ.add_err(msg);
+        }
     }
     for(const sym of car.summer_complete) {
-        let box = complete_bodies["Summer"].querySelector(`input[data-sym="${sym}"]`);
-        box.checked = true;
+        const box = complete_bodies["Summer"].querySelector(`input[data-sym="${sym}"]`);
+        if(box) {
+            box.checked = true;
+        } else {
+            const crs = DATA.courses.get(sym);
+            const msg = `Course "${sym}" (${crs.title} from ${crs.book}) marked as complete, but no chapters from that course were assigned or completed this year.`;
+            RQ.add_err(msg);
+        }
     }
 
     // Set tabindexes.

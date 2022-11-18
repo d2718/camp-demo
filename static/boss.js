@@ -31,7 +31,7 @@ function toggle_table_body(evt) {
 }
 
 // Add the expand/collapse event handler to every table's head.
-for(const tab of document.querySelectorAll("table")) {
+for(const tab of document.querySelectorAll("div#cals table")) {
     tab.querySelector("thead").addEventListener("click", toggle_table_body);
 }
 
@@ -91,7 +91,8 @@ const DISPLAY = {
     "edit_dialog": document.getElementById("edit-email"),
     "email_text": document.getElementById("email-text"),
     "email_edit_submit": document.getElementById("edit-email-confirm"),
-    "pdf_view": document.getElementById("view-pdf",)
+    "pdf_view": document.getElementById("view-pdf"),
+    "completion_view": document.getElementById("view-completion"),
 }
 
 function edit_email(r) {
@@ -295,3 +296,12 @@ function download_archive(evt) {
 for(const butt of document.querySelectorAll("div#archive-buttons button")) {
     butt.addEventListener("click", download_archive);
 }
+
+document.getElementById("show-completion").addEventListener("click", evt => {
+    evt.preventDefault();
+    DISPLAY.completion_view.showModal();
+});
+document.getElementById("view-completion-close").addEventListener("click", evt => {
+    evt.preventDefault();
+    DISPLAY.completion_view.close();
+});

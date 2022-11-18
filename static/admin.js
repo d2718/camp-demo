@@ -21,6 +21,7 @@ STATE.next_error = function() {
 const DATA = {
     users: new Map(),
     courses: new Map(),
+    completion: new Map(),
 };
 
 const DISPLAY = {
@@ -41,12 +42,13 @@ const DISPLAY = {
     course_upload: document.getElementById("upload-course-dialog"),
     chapter_edit:  document.getElementById("alter-chapter"),
     student_reset: document.getElementById("reset-students"),
+    history_year: document.querySelector("tbody#add-completion-history input[name='year']"),
 };
 
 function populate_users(r) {
     r.json()
     .then(j => {
-        console.log("populate-users response:")
+        console.log("populate-users response:");
         console.log(j);
 
         DATA.users = new Map();
@@ -57,6 +59,30 @@ function populate_users(r) {
         for(const u of j) {
             add_user_to_display(u);
         }
+    }).catch(RQ.add_err);
+}
+
+function populate_completion(r) {
+    r.json()
+    .then(j => {
+        console.log("populate-completion response:");
+        console.log(j);
+
+        for(const [name, vec] of Object.entries(j)) {
+            DATA.completion.set(name, vec);
+        }
+    }).catch(RQ.add_err);
+}
+
+function update_completion(r) {
+    r.json()
+    .then(j => {
+        console.log("update-completion response:");
+        console.log(j);
+
+        const uname = r.headers.get("x-camp-student");
+        DATA.completion.set(uname, j);
+        display_completion_history(uname);
     }).catch(RQ.add_err);
 }
 
@@ -91,6 +117,10 @@ function field_response(r) {
             populate_users(r); break;
         case "populate-courses":
             populate_courses(r); break;
+        case "populate-completion":
+            populate_completion(r); break;
+        case "update-completion":
+            update_completion(r); break;
         default:
             const e_n = STATE.next_error();
             const err_txt = `Unrecognized x-camp-action header: ${action}. (See console error #${e_n})`;
@@ -517,6 +547,58 @@ function populate_teacher_selector(teacher_uname) {
     }
 }
 
+function display_completion_history(uname) {
+    const tbody = document.getElementById("alter-student-completion-history");
+    UTIL.clear(tbody);
+    for(const ipt of document.querySelectorAll("tbody#add-completion-history input")) {
+        ipt.value = "";
+    }
+    UTIL.clear(document.getElementById("add-completion-spring-year"));
+
+    const completions = DATA.completion.get(uname);
+    if(completions) {
+        for(const comp of completions) {
+            const crs = DATA.courses.get(comp.sym);
+            const tr = document.createElement("tr");
+
+            let td = document.createElement("td");
+            td.setAttribute("title", crs.book);
+            UTIL.set_text(td, comp.sym)
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            td.setAttribute("title", crs.book);
+            UTIL.set_text(td, crs.title);
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            UTIL.set_text(td, comp.term);
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            const academic_year = `${comp.year}–${comp.year+1}`;
+            UTIL.set_text(td, academic_year);
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            const butt = document.createElement("button");
+            butt.setAttribute("data-sym", comp.sym);
+            butt.setAttribute("data-uname", uname);
+            UTIL.label("🗙", butt);
+            butt.setAttribute("title", `remove ${crs.title}`);
+            butt.addEventListener("click", delete_completion);
+            td.appendChild(butt);
+            tr.appendChild(td);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    document.getElementById("add-completion-history-add")
+        .setAttribute("data-uname", uname);
+ 
+}
+
 function edit_student(evt) {
     const uname = this.getAttribute("data-uname");
     const form = document.forms["alter-student"];
@@ -546,8 +628,19 @@ function edit_student(evt) {
         del.disabled = true;
     }
 
+    display_completion_history(uname);
+
     DISPLAY.student_edit.showModal();
 }
+
+document.querySelector("tbody#add-completion-history input[name='year']")
+    .addEventListener("input", function(evt) {
+        const span = document.getElementById("add-completion-spring-year");
+        const year = Number(DISPLAY.history_year.value);
+        let text = "";
+        if(year) { text = `–${year + 1}`; }
+        UTIL.set_text(span, text);
+    });
 
 document.getElementById("add-student")
     .addEventListener("click", edit_student);
@@ -993,6 +1086,9 @@ function populate_courses(r) {
 
         DATA.courses = new Map();
         UTIL.clear(DISPLAY.course_tbody);
+        const list = document.getElementById("course-names");
+        UTIL.clear(list);
+
         for(const c of j) {
             DATA.courses.set(c.sym, c);
 
@@ -1012,6 +1108,14 @@ function populate_courses(r) {
             DISPLAY.course_tbody.appendChild(tr);
             populate_course_chapters(c);
 
+            // Add an <OPTION> to the course names <DATALIST>
+            let book_text = "";
+            if(c.book) { book_text = ` (${c.book})`; }
+            const opt_text = `${c.sym}: ${c.title}${book_text}`;
+            const opt = document.createElement("option");
+            opt.value = c.sym;
+            UTIL.set_text(opt, opt_text);
+            list.appendChild(opt);
         }
     }).catch(RQ.add_err);
 }
@@ -1058,6 +1162,59 @@ document.getElementById("reset-students-confirm")
         }
     });
 
+function add_completion(evt) {
+    evt.preventDefault();
+
+    const uname = this.getAttribute("data-uname");
+    const subbod = document.getElementById("add-completion-history");
+    const sym = subbod.querySelector("input[name='course']").value.trim();
+    const term = subbod.querySelector("select").value;
+    let year = subbod.querySelector("input[name='year']").value.trim();
+    year = Number(year);
+    if(!year) {
+        RQ.add_err("You should enter a valid year.");
+        return;
+    }
+    if(year < 2001) {
+        RQ.add_err("The year should probably be some time this millennium.");
+        return;
+    }
+    if(!sym) {
+        RQ.add_err("You should enter a course symbol.");
+        return;
+    }
+
+    const extra_headers = { "x-camp-student": uname };
+    const body = {
+        "sym": sym,
+        "year": year,
+        "term": term,
+    };
+    const stud = DATA.users.get(uname);
+    const desc = `Adding completed course to history for ${stud.rest} ${stud.last}.`;
+
+    request_action("add-completion", body, desc, extra_headers);
+}
+
+document.getElementById("add-completion-history-add")
+    .addEventListener("click", add_completion);
+
+function delete_completion(evt) {
+    evt.preventDefault();
+
+    const uname = this.getAttribute("data-uname");
+    const sym = this.getAttribute("data-sym");
+
+    const extra_headers = {
+        "x-camp-student": uname,
+        "x-camp-course": sym,
+    };
+    const stud = DATA.users.get(uname);
+    const desc = `Deleting course "${sym}" from course history for ${stud.rest} ${stud.last}.`;
+
+    request_action("delete-completion", null, desc, extra_headers);
+}
+
 /*
 
 PAGE LOAD SECTION
@@ -1068,5 +1225,6 @@ console.log(DISPLAY);
 
 UTIL.ensure_on_load(() => {
     request_action("populate-users", "", "Fetching User data...");
+    request_action("populate-completion", "", "Fetching Course completion history...");
     request_action("populate-courses", "", "Fetching Course data...");
 });

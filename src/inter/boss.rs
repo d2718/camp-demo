@@ -5,6 +5,7 @@ API calls.
 use core::fmt::Write as CoreWrite;
 use std::io::Write as IoWrite;
 use std::{
+    collections::BTreeMap,
     str::FromStr,
     sync::Arc,
 };
@@ -26,6 +27,7 @@ use super::*;
 use crate::{
     auth::AuthResult,
     config::Glob,
+    hist::HistEntry,
     pace::{GoalDisplay, GoalStatus, Pace, PaceDisplay, RowDisplay, Term},
     store::Store,
     user::{BaseUser, User},
@@ -91,11 +93,20 @@ pub async fn login(base: BaseUser, form: LoginData, glob: Arc<RwLock<Glob>>) -> 
         }
     };
 
+    let histories_string = match generate_boss_histories(glob.clone()).await {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("Error attempting to generate boss course completion histories: {}", &e);
+            return respond_login_error(StatusCode::INTERNAL_SERVER_ERROR, &e);
+        }
+    };
+
     let data = json!({
         "uname": &base.uname,
         "key": &auth_key,
         "calendars": calendar_string,
         "archives": archive_buttons_string,
+        "completion_rows": histories_string,
     });
 
     serve_raw_template(StatusCode::OK, "boss", &data, vec![])
@@ -340,6 +351,70 @@ pub async fn make_boss_calendars(glob: Arc<RwLock<Glob>>) -> Result<String, Stri
     Ok(buff)
 }
 
+async fn generate_boss_histories(glob: Arc<RwLock<Glob>>) -> Result<String, String> {
+    log::trace!("generate_boss_histories( [ Glob ] ) called.");
+
+    let glob = glob.read().await;
+    let map = glob.data().read().await.get_all_completion_histories().await
+        .map_err(|e| format!(
+            "error retrieving course completion history from database: {}", &e
+        ))?;
+
+    let mut kidmap: BTreeMap<String, (String, Vec<HistEntry>)> = BTreeMap::new();
+    for (uname, hist) in map.into_iter() {
+        let stud = match glob.users.get(&uname) {
+            Some(User::Student(s)) => s,
+            x => {
+                log::warn!(
+                    "Glob.users.get({}), expected Student, got {:?}",
+                    &uname, &x
+                );
+                continue;
+            },
+        };
+        let name = format!("{}, {}", &stud.last, &stud.rest);
+        kidmap.insert(name, (uname, hist));
+    }
+
+    let mut output = String::new();
+    for (name, (uname, hist)) in kidmap.iter() {
+        writeln!(&mut output, "<tr><td>{}<br><kbd>{}</kbd></td><td>", name, uname)
+            .map_err(|e| format!(
+                "error writing student {:?} line: {}", &uname, &e
+            ))?;
+        for ent in hist.iter() {
+            let y = ent.year;
+            match glob.course_by_sym(&ent.sym) {
+                Some(crs) => {
+                    writeln!(
+                        &mut output, "    <div>{} (<em>{}</em>)<br>{} {}--{}</div>",
+                        &crs.title, &crs.book, ent.term.as_str(), y, y+1
+                    ).map_err(|e| format!(
+                        "error writing student {:?} line: {}", &uname, &e
+                    ))?;
+                },
+                None => {
+                    log::warn!(
+                        "generate_boss_histories(): writing {:?} refers to unknown course symbol {:?}",
+                        &uname, &ent.sym
+                    );
+                    writeln!(
+                        &mut output, "    <div>{} (unknown course)<br>{} {}--{}</div>",
+                        &ent.sym, ent.term.as_str(), y, y+1
+                    ).map_err(|e| format!(
+                        "error writing student {:?} line: {}", &uname, &e
+                    ))?;
+                }
+            }
+        }
+        writeln!(&mut output, "</td>").map_err(|e| format!(
+            "error writing student {:?} line: {}", &uname, &e
+        ))?;
+    }
+
+    Ok(output)
+}
+
 /// Handle "Boss API" requests. Requests to "/boss" get routed here.
 ///
 /// Right now the only API calls the Boss can make have to do with sending
@@ -399,6 +474,7 @@ pub async fn api(
         "email-all" => email_all(glob.clone()).await,
         "download-report" => download_report(&headers, glob.clone()).await,
         "report-archive" => download_archive(&headers, glob.clone()).await,
+        "populate-histories" => populate_histories(glob.clone()).await,
         x => respond_bad_request(format!(
             "{:?} is not a recognizable x-camp-action value.",
             x
@@ -1048,5 +1124,30 @@ async fn download_archive(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Respo
             ),
         ],
         data
+    ).into_response()
+}
+
+async fn populate_histories(glob: Arc<RwLock<Glob>>) -> Response {
+    let map = {
+        let glob = glob.read().await;
+        match glob.data().read().await.get_all_completion_histories().await {
+            Ok(map) => map,
+            Err(e) => {
+                let estr = format!("Error retrieving all completion histories from database: {}", &e);
+                log::error!("{}", &estr);
+                return text_500(Some(estr));
+            },
+        }
+    };
+
+    (
+        StatusCode::OK,
+        [
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("populate-histories"),
+            ),
+        ],
+        Json(map)
     ).into_response()
 }

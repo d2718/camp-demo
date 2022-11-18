@@ -27,6 +27,9 @@ const AUTH = {
         </div>
         <div id="cals">{{calendars}}</div>
         <div id="footer">
+            <button id="show-completion">
+                <label>show<br>completion</label>
+            </button>
             <form name="archives" class="inline" id="archives">
                 <h4>Download all Reports</h4>
                 <fieldset><ul class="dotless">
@@ -86,14 +89,16 @@ const AUTH = {
             </form>
         </dialog>
 
-        <!--
-            OH MAN
-
-            I need to continue fixing this once I figure out the completion.
-        -->
-
-        <dialog id="completion" class="edit">
-            <table></table>
+        <dialog id="view-completion" class="edit">
+            <h1>Course Completion Record</h1>
+            <table>
+                <tbody>{{completion_rows}}</tbody>
+            </table>
+            <form name="view-completion" action="dialog">
+                <button id="view-completion-close" name="close">
+                    <label class="cancel">done</label>
+                </button>
+            </form>
         </dialog>
 
         <dialog id="are-you-sure">

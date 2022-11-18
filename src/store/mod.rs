@@ -168,7 +168,7 @@ static SCHEMA: &[(&str, &str, &str)] = &[
         "CREATE TABLE completion (
             uname   TEXT REFERENCES students(uname),
             term    TEXT,
-            courses TEXT,
+            courses TEXT REFERENCES courses(sym),
             year    INT
         )",
         "DROP TABLE completion",

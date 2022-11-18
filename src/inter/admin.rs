@@ -17,6 +17,7 @@ use tokio::sync::RwLock;
 
 use super::*;
 use crate::config::Glob;
+use crate::hist::HistEntry;
 use crate::course::{Chapter, Course};
 use crate::{auth::AuthResult, user::*, DATE_FMT};
 
@@ -154,8 +155,11 @@ pub async fn api(
         "delete-chapter" => delete_chapter(body, glob.clone()).await,
         "populate-cal" => populate_calendar(glob.clone()).await,
         "update-cal" => update_calendar(body, glob.clone()).await,
-        "populate-dates" => populate_dates(glob).await,
+        "populate-dates" => populate_dates(glob.clone()).await,
         "set-date" => set_date(body, glob.clone()).await,
+        "populate-completion" => populate_completion(glob.clone()).await,
+        "add-completion" => add_completion(body, &headers, glob.clone()).await,
+        "delete-completion" => delete_completion(&headers, glob.clone()).await,
         "reset-students" => reset_students(glob.clone()).await,
         x => respond_bad_request(format!(
             "{:?} is not a recognizable x-camp-action value.",
@@ -215,6 +219,49 @@ async fn populate_users(glob: Arc<RwLock<Glob>>) -> Response {
         Json(users),
     )
         .into_response()
+}
+
+async fn update_completion(uname: &str, glob: Arc<RwLock<Glob>>) -> Response {
+    log::trace!("update_completion( {:?}, [ Glob ] ) called.", uname);
+
+    let new_hist = match glob.read().await
+        .get_student_completion_history(uname).await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            let estr = format!(
+                "Error retrieving completion history for {:?}: {}", uname, &e
+            );
+            log::error!("{}", &estr);
+            return text_500(Some(estr));
+        },
+    };
+
+    let uname_header = match HeaderValue::from_str(uname) {
+        Ok(h) => h,
+        Err(e) => {
+            let estr = format!(
+                "Error turning uname {:?} into a header value: {}", uname, &e
+            );
+            log::error!("{}", &estr);
+            return text_500(Some(estr));
+        },
+    };
+
+    (
+        StatusCode::OK,
+        [
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("update-completion"),
+            ),
+            (
+                HeaderName::from_static("x-camp-student"),
+                uname_header,
+            ),
+        ],
+        Json(new_hist),
+    ).into_response()
 }
 
 /**
@@ -995,4 +1042,96 @@ async fn reset_students(glob: Arc<RwLock<Glob>>) -> Response {
     }
 
     populate_users(glob).await
+}
+
+async fn populate_completion(glob: Arc<RwLock<Glob>>) -> Response {
+    let map = match glob.read().await.data().read().await
+        .get_all_completion_histories().await
+    {
+        Ok(map) => map,
+        Err(e) => {
+            log::error!(
+                "Error attempting to retrieve all completion histories: {}", &e
+            );
+
+            return text_500(Some(format!(
+                "Error retrieving completion history: {}", &e
+            )));
+        },
+    };
+
+    (
+        StatusCode::OK,
+        [
+            (
+                HeaderName::from_static("x-camp-action"),
+                HeaderValue::from_static("populate-completion"),
+            ),
+        ],
+        Json(map),
+    ).into_response()
+}
+
+async fn add_completion(
+    body: Option<String>,
+    headers: &HeaderMap,
+    glob: Arc<RwLock<Glob>>
+) -> Response {
+    let uname = match get_head("x-camp-student", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let body = match body {
+        Some(body) => body,
+        None => {
+            return respond_bad_request(
+                "Request requires a JSON body with course and term info.".to_owned(),
+            );
+        }
+    };
+    let hist: HistEntry = match serde_json::from_str(&body) {
+        Ok(hist) => hist,
+        Err(e) => {
+            log::error!(
+                "Unable to deserialize completion history data for {:?}: {}\nData: {:?}",
+                uname, &e, &body
+            );
+            return respond_bad_request(format!(
+                "Unable to deserialize completion history data: {}", &e
+            ));
+        },
+    };
+
+    if let Err(e) = glob.read().await.add_completion(
+        uname, hist.year, hist.term, &hist.sym
+    ).await {
+        log::error!(
+            "Error attempting to add completion data for {:?}: {}\nData: {:?}",
+            uname, &e, &hist
+        );
+        return text_500(Some(e.to_string()));
+    }
+
+    update_completion(uname, glob).await
+}
+
+async fn delete_completion(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Response {
+    let uname = match get_head("x-camp-student", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+    let sym = match get_head("x-camp-course", headers) {
+        Ok(uname) => uname,
+        Err(e) => { return respond_bad_request(e); },
+    };
+
+    if let Err(e) = glob.read().await.delete_completion(uname, sym).await {
+        log::error!(
+            "Error attempting to remove course {:?} from the completion history for {:?}: {}",
+            sym, uname, &e
+        );
+        return text_500(Some(e.to_string()));
+    };
+
+    update_completion(uname, glob).await
 }

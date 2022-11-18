@@ -42,6 +42,7 @@ CREATE TABLE reports (
 */
 use std::{
     collections::HashMap,
+    fmt::Debug,
     str::FromStr,
 };
 
@@ -311,7 +312,7 @@ impl Store {
         term: Term,
         courses: &[S],
     ) -> Result<(), DbError>
-    where S: AsRef<str> + ToSql + std::fmt::Debug + Sync
+    where S: AsRef<str> + ToSql + Debug + Sync
     {
         log::trace!(
             "Store::set_completion( [ &T ], {:?}, {:?}, {} {:?} ) called.",
@@ -345,6 +346,52 @@ impl Store {
                 "error inserting completed course {:?}: {}", crs, &e
             ))?;
         }
+
+        Ok(())
+    }
+
+    pub async fn add_completion(
+        t: &Transaction<'_>,
+        uname: &str,
+        year: i32,
+        term: Term,
+        course: &str
+    ) -> Result<(), DbError>
+    {
+        log::trace!(
+            "Store::add_completion( {:?}, {:?}, {:?}, {:?} ) called.",
+            uname, &year, &term, course
+        );
+
+        t.execute(
+            "INSERT INTO completion (uname, year, term, courses)
+            VALUES ($1, $2, $3, $4)",
+            &[&uname, &year, &term.as_str(), &course]
+        ).await.map_err(|e| format!(
+            "error inserting course {:?} for uname for term {:?} {}-{}: {}",
+            course, &term, year, year+1, &e
+        ))?;
+
+        Ok(())
+    }
+
+    pub async fn delete_completion(
+        t: &Transaction<'_>,
+        uname: &str,
+        course: &str
+    ) -> Result<(), DbError> {
+        log::trace!(
+            "Store::delete_completion( {:?}, {:?} ) called.",
+            uname, course
+        );
+
+        t.execute(
+            "DELETE FROM completion WHERE uname = $1 AND courses = $2",
+            &[&uname, &course]
+        ).await.map_err(|e| format!(
+            "error deleting course {:?} for {:?}: {}",
+            course, uname, &e
+        ))?;
 
         Ok(())
     }
@@ -417,7 +464,7 @@ impl Store {
             "Store::get_completion_histories_by_teacher( {:?} ) called.", tuname
         );
 
-        let client =self.connect().await?;
+        let client = self.connect().await?;
         let rows = client.query(
             "SELECT completion.uname, completion.term,
                     completion.year, completion.courses
@@ -439,6 +486,41 @@ impl Store {
             };
 
             map.entry(uname).or_default().push(hist);
+        }
+
+        for (_, hist) in map.iter_mut() {
+            hist.sort();
+        }
+
+        Ok(map)
+    }
+
+    pub async fn get_all_completion_histories(&self)
+    -> Result<HashMap<String, Vec<HistEntry>>, DbError> {
+        log::trace!("Store::get_all_completion_histories() called.");
+
+        let client = self.connect().await?;
+        let rows = client.query(
+            "SELECT uname, year, term, courses FROM completion",
+            &[]
+        ).await?;
+
+        let mut map: HashMap<String, Vec<HistEntry>> = HashMap::new();
+        for row in rows.iter() {
+            let uname: String = row.try_get("uname")?;
+            let term_str: &str = row.try_get("term")?;
+            let term = Term::from_str(term_str)?;
+            let hist = HistEntry {
+                sym: row.try_get("courses")?,
+                year: row.try_get("year")?,
+                term,
+            };
+
+            map.entry(uname).or_default().push(hist);
+        }
+
+        for (_, hist) in map.iter_mut() {
+            hist.sort();
         }
 
         Ok(map)

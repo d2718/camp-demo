@@ -11,6 +11,7 @@ use std::{
     io::Cursor,
     net::SocketAddr,
     path::{Path, PathBuf},
+    str::FromStr,
     sync::Arc,
 };
 
@@ -18,12 +19,14 @@ use rand::{distributions, Rng};
 use serde::Deserialize;
 use time::Date;
 use tokio::sync::RwLock;
+use tokio_postgres::types::{ToSql, Type};
 
 use crate::{
+    academic_year_from_start_year,
     auth,
     auth::AuthResult,
     course::{Chapter, Course},
-    hist::{CompletionHistory, HistEntry},
+    hist::HistEntry,
     inter,
     MiniString,
     pace::{Goal, Pace, Source, Term},
@@ -852,7 +855,8 @@ impl<'a> Glob {
     Delete from the database the Course with the given `sym`bol, along with
     all of its Chapters.
 
-    Will fail if any Students have Chapters from the given course as Goals.
+    Will fail if any Students have Chapters from the given course as Goals,
+    or have the course as a "completed" course.
     */
     pub async fn delete_course(&self, sym: &str) -> Result<(usize, usize), UnifiedError> {
         log::trace!("Glob::delete_course( {:?} ) called.", sym);
@@ -862,11 +866,14 @@ impl<'a> Glob {
         let mut client = data_read.connect().await?;
         let t = client.transaction().await?;
 
-        let rows = t
-            .query("SELECT DISTINCT uname FROM goals WHERE sym = $1", &[&sym])
-            .await?;
+        let sym_ref: [&(dyn ToSql + Sync); 1] = [&sym];
 
-        if !rows.is_empty() {
+        let (goal_rows, hist_rows) = tokio::try_join!(
+            t.query("SELECT DISTINCT uname FROM goals WHERE sym = $1", &sym_ref[..]),
+            t.query("SELECT DISTINCT uname FROM completion WHERE courses = $1", &sym_ref[..]),
+        )?;
+
+        if !goal_rows.is_empty() {
             let crs = self
                 .course_by_sym(sym)
                 .ok_or_else(|| format!("There is no course with symbol {:?}.", sym))?;
@@ -874,7 +881,26 @@ impl<'a> Glob {
                 "The Course {:?} ({} from {}) cannot be deleted because the following users have Goals from that Course:\n",
                 sym, &crs.title, &crs.book
             );
-            for row in rows.iter() {
+            for row in goal_rows.iter() {
+                let uname: &str = row.try_get("uname")?;
+                if let Some(User::Student(ref s)) = self.users.get(uname) {
+                    writeln!(&mut estr, "{} ({}, {})", uname, &s.last, &s.rest)
+                        .map_err(|e| format!("Error generating error message: {}", &e))?;
+                }
+            }
+
+            return Err(estr.into());
+        }
+
+        if !hist_rows.is_empty() {
+            let crs = self.course_by_sym(sym).ok_or_else(|| format!(
+                "There is no course with symbol {:?}.", sym
+            ))?;
+            let mut estr = format!(
+                "The Course {:?} ({} from {}) cannot be deleted because the following users have that Course in their completion history:\n",
+                sym, &crs.title, &crs.book
+            );
+            for row in hist_rows.iter() {
                 let uname: &str = row.try_get("uname")?;
                 if let Some(User::Student(ref s)) = self.users.get(uname) {
                     writeln!(&mut estr, "{} ({}, {})", uname, &s.last, &s.rest)
@@ -1048,7 +1074,6 @@ impl<'a> Glob {
         term: Term,
     ) -> Result<Option<Vec<u8>>, UnifiedError> {
         use std::io::Write;
-        use tokio_postgres::types::{ToSql, Type};
         use zip::{write::FileOptions, CompressionMethod, ZipWriter};
         log::trace!(
             "Glob::get_reports_archive_by_teacher( {:?} ) called.",
@@ -1215,6 +1240,85 @@ impl<'a> Glob {
             ))?;
 
         Ok(hists)
+    }
+
+    pub async fn add_completion(
+        &self,
+        uname: &str,
+        year: i32,
+        term: Term,
+        course: &str
+    ) -> Result<(), UnifiedError> {
+        log::trace!(
+            "Glob::add_completion( {:?}, {}, {:?}, {:?}",
+            uname, year, term, course
+        );
+
+        let mut client = self.data.read().await.connect().await?;
+        let t = client.transaction().await?;
+
+        if let Some(row) = t.query_opt(
+            "SELECT year, term FROM completion
+            WHERE uname = $1 AND courses = $2",
+            &[&uname, &course]
+        ).await? {
+            let year = row.try_get("year")?;
+            let term_str = row.try_get("term")?;
+            let term = Term::from_str(term_str)?;
+            let year_str = academic_year_from_start_year(year);
+            let estr = match self.course_by_sym(course) {
+                Some(crs) => format!(
+                    "Student {:?} already has a completion record for {:?} ({} from {}) during {} {}.",
+                    uname, course, &crs.title, &crs.book, term.as_str(), &year_str
+                ),
+                None => format!(
+                    "Student {:?} already has a completion record for {:?} during {} {}.",
+                    uname, course, term.as_str(), &year_str
+                ),
+            };
+            return Err(UnifiedError::from(estr));
+        }
+
+        Store::add_completion(&t, uname, year, term, course).await?;
+        t.commit().await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_completion(
+        &self,
+        uname: &str,
+        course: &str
+    ) -> Result<(), UnifiedError> {
+        log::trace!(
+            "Glob::delete_completion( {:?}, {:?} ) called.", uname, course
+        );
+
+        let mut client = self.data.read().await.connect().await?;
+        let t = client.transaction().await?;
+
+        if t.query_opt(
+            "SELECT courses FROM completion
+            WHERE uname = $1 AND courses = $2",
+            &[&uname, &course]
+        ).await?.is_none() {
+            let estr = match self.course_by_sym(course) {
+                Some(crs) => format!(
+                    "Student {:?} has no record of completing course {:?} ({} from {}).",
+                    uname, course, &crs.title, &crs.book
+                ),
+                None => format!(
+                    "Student {:?} has no record of completing course {:?}.",
+                    uname, course
+                ),
+            };
+            return Err(UnifiedError::from(estr));
+        }
+
+        Store::delete_completion(&t, uname, course).await?;
+        t.commit().await?;
+
+        Ok(())
     }
 
     /**

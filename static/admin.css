@@ -19,6 +19,10 @@
 }
 
 body { font-family: var(--text-font); }
+kbd {
+    font-family: var(--mono-font);
+    font-size: var(--mono-size);
+}
 
 div.center { text-align: center; }
 
@@ -123,3 +127,17 @@ button#reset-students-button label {
     align-items: center;
     gap: 1ex;
 }
+
+table#alter-student-completion { margin-top: 1em; }
+table#alter-student-completion td {
+    padding: 0.5ex;
+    white-space: nowrap;
+}
+tbody#alter-student-completion-history td:first-child {
+    font-family: var(--mono-font);
+    font-size: var(--mono-size);
+    text-align: right;
+}
+tbody#add-completion-history input[name="course"] { width: 48ex; }
+tbody#add-completion-history input[name="year"] { width: 8ex; }
+tbody#add-completion-history input { height: 2em; }
