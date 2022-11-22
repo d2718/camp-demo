@@ -68,9 +68,14 @@ async fn main() {
     log::info!("Logging started.");
     log::info!("camp version {}", camp::VERSION);
 
-    //let _args: Vec<String> = std::env::args().collect();
+    let args: Vec<String> = std::env::args().collect();
 
-    let glob = config::load_configuration("config.toml").await.unwrap();
+    let config_path = match args.get(1) {
+        Some(path) => path.as_str(),
+        None => "config.toml",
+    };
+    let glob = config::load_configuration(config_path).await.unwrap();
+
     let glob = Arc::new(RwLock::new(glob));
 
     let serve_root =

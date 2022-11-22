@@ -792,6 +792,8 @@ mod tests {
         "Study Skills",
     ];
 
+    static YEAR: i32 = 2022;
+
     fn social_map() -> HashMap<String, String> {
         SOCIAL_CATS
             .iter()
@@ -807,7 +809,7 @@ mod tests {
         let db = Store::new(FAKEPROD.to_owned());
         db.ensure_db_schema().await?;
 
-        let sc = db.get_report_sidecar(UNAME).await?;
+        let sc = db.get_report_sidecar(UNAME, YEAR).await?;
 
         log::info!("Debug:\n{:#?}", &sc);
         let sc_str: String =
@@ -856,13 +858,13 @@ mod tests {
             facts: Some(facts),
             fall_social: social_map(),
             spring_social: social_map(),
-            fall_complete: "None".to_owned(),
-            spring_complete: "".to_owned(),
-            summer_complete: None,
+            fall_complete: vec![],
+            spring_complete: vec![],
+            summer_complete: vec![],
             mastery,
         };
 
-        db.set_report_sidecar(&sc).await?;
+        db.set_report_sidecar(&sc, YEAR).await?;
 
         Ok(())
     }

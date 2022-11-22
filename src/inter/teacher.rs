@@ -1087,6 +1087,7 @@ async fn update_sidecar(
     let term = match term {
         "fall" => Term::Fall,
         "spring" => Term::Spring,
+        "summer" => Term::Summer,
         x => {
             log::error!(
                 "Header \"x-camp-action\" value {:?} shouldn't make it this far.", x
@@ -1142,14 +1143,7 @@ async fn update_sidecar(
     let term = match term {
         Term::Fall => HeaderValue::from_static("fall"),
         Term::Spring => HeaderValue::from_static("spring"),
-        x => {
-            log::error!(
-                "Somehow a {:?} has made it this far; this shouldn't happen.", &x
-            );
-            return respond_bad_request(format!(
-                "Reports for {} are as of yet unsupported.", &x
-            ));
-        },
+        Term::Summer => HeaderValue::from_static("summer"),
     };
 
     let suname = match HeaderValue::from_str(&sidecar.uname) {

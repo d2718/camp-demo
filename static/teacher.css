@@ -255,6 +255,17 @@ dialog#edit-sidecar fieldset#completion-container ul {
 }
 dialog#edit-sidecar fieldset#completion-container ul li { margin: 0.5ex; }
 dialog#edit-sidecar fieldset#completion-container ul li > * { margin-right: 1ex; }
+div#edit-sidecar-buttons {
+    grid-column: 1 / 5;
+    justify-self: stretch;
+    display: flex;
+    justify-content: space-between;
+}
+div#edit-sidecar-buttons > * {
+    width: 15%;
+    align-self: center;
+}
+div#edit-sidecar-buttons > span { text-align: right; }
 
 dialog#edit-report,
 dialog#view-pdf {

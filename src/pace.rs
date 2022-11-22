@@ -1278,6 +1278,8 @@ impl<'a> PaceDisplay<'a> {
             rows,
         };
 
+        log::debug!("{:#?}", &pd);
+
         Ok(pd)
     }
 }

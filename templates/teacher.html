@@ -219,16 +219,22 @@ const AUTH = {
                 <h3>Social/Emotional/Behavioral</h3>
                 <h4>Fall</h4><h4>Spring</h4>
                 <fieldset id="trait-container"></fieldset>
-
-                <button id="edit-sidecar-cancel">
-                    <label class="cancel">cancel</label>
-                </button>
-                <button id="edit-sidecar-fall" class="double" data-term="fall">
-                    <label class="confirm">fall report</label>
-                </button>
-                <button id="edit-sidecar-spring" data-term="spring">
-                    <label class="confirm">spring report</label>
-                </button>
+                <div id="edit-sidecar-buttons">
+                    <button id="edit-sidecar-cancel">
+                        <label class="cancel">cancel</label>
+                    </button>
+                    <span>Generate:</span>
+                    <button id="edit-sidecar-fall" class="double" data-term="fall">
+                        <label class="confirm">fall report</label>
+                    </button>
+                    <button id="edit-sidecar-spring" data-term="spring">
+                        <label class="confirm">spring report</label>
+                    </button>
+                    <span></span>
+                    <button id="edit-sidecar-summer" data-term="summer">
+                        <label class="confirm">summer report</label>
+                    </button>
+                </div>
                 
                 <input type="hidden" name="uname">
             </form>

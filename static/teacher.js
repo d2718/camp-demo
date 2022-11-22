@@ -916,6 +916,8 @@ document.getElementById("edit-sidecar-fall")
     .addEventListener("click", save_sidecar);
 document.getElementById("edit-sidecar-spring")
     .addEventListener("click", save_sidecar);
+document.getElementById("edit-sidecar-summer")
+    .addEventListener("click", save_sidecar);
 
 function field_response(r) {
     if(!r.ok) {

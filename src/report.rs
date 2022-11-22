@@ -333,8 +333,10 @@ pub struct ReportData<'a> {
     social_lines: String,
     fall_reqs: &'a str,
     spring_reqs: &'a str,
+    summer_reqs: &'a str,
     fall_remain: usize,
     spring_remain: usize,
+    summer_remain: usize,
     fall_complete: String,
     spring_complete: String,
     summer_complete: String,
@@ -443,6 +445,13 @@ impl<'a, 'b> ReportData<'a> {
             ))?
         };
 
+        let academic_year_end = match glob.dates.get("end-spring") {
+            Some(d) => d,
+            None => {
+                return Err("Admin has not set \"end-spring\" date.".to_owned());
+            },
+        };
+
         let fall_tests = write_percent(pd.fall_tests)
             .map_err(|e| format!("Error writing fall test average: {}", &e))?;
         let spring_tests = write_percent(pd.spring_tests)
@@ -472,14 +481,31 @@ impl<'a, 'b> ReportData<'a> {
                     }
                 })
             {
-                let mast = if gd.done.is_some() {
-                    mastery.get(&gd.id).copied() //.map(|ms| *ms)
-                } else {
-                    None
-                };
-                let line = ReportGoalData::new(gd, mast)?;
+                match term {
+                    Term::Fall | Term::Spring => {
+                        let mast = if gd.done.is_some() {
+                            mastery.get(&gd.id).copied()
+                        } else {
+                            None
+                        };
+                        let line = ReportGoalData::new(gd, mast)?;
 
-                crate::inter::write_raw_template("report_goal", &line, &mut lines)?;
+                        crate::inter::write_raw_template("report_goal", &line, &mut lines)?;
+                    },
+                    Term::Summer => {
+                        // Skip any Goal completed during the Fall or Spring
+                        // Semesters; show only Goals that are incomplete or
+                        // completed during the Summer.
+                        if let Some(d) = &gd.done {
+                            if d <= academic_year_end {
+                                continue;
+                            }
+                        }
+                        let line = ReportGoalData::new(gd, None)?;
+
+                        crate::inter::write_raw_template("report_summer_goal", &line, &mut lines)?;
+                    },
+                }
             }
 
             let table = String::from_utf8(lines)
@@ -533,7 +559,7 @@ impl<'a, 'b> ReportData<'a> {
         // spring|fall_done shouldn't be able to exceed spring|fall_due.
         let fall_remain = pd.fall_due.saturating_sub(pd.fall_done);
         let spring_remain = pd.spring_due.saturating_sub(pd.spring_done);
-        let tot_remain = fall_remain + spring_remain;
+        let tot_remain = (pd.fall_due + pd.spring_due).saturating_sub(pd.n_done);
 
         let requirement_statement = match term {
             Term::Fall => {
@@ -586,8 +612,10 @@ They have {} chapter{} left before their {} academic year is complete.",
             social_lines,
             fall_reqs: reqs_complete(pd.semf_inc),
             spring_reqs: reqs_complete(pd.sems_inc),
+            summer_reqs: reqs_complete(pd.semf_inc || pd.sems_inc),
             fall_remain,
             spring_remain,
+            summer_remain: tot_remain,
             requirement_statement,
             fall_complete,
             spring_complete,
@@ -605,6 +633,8 @@ They have {} chapter{} left before their {} academic year is complete.",
             spring_letter,
             summary_lines: String::new(),
         };
+
+        log::debug!("{:#?}", &rd);
 
         Ok(rd)
     }
@@ -632,9 +662,7 @@ pub async fn generate_report_markup(
     let summary_name = match term {
         Term::Fall => "fall_summary",
         Term::Spring => "spring_summary",
-        Term::Summer => {
-            return Err("Summer reports not yet supported.".to_owned().into());
-        }
+        Term::Summer => "summer_summary",
     };
 
     let summary_lines = render_raw_template(summary_name, &rd)
@@ -644,7 +672,12 @@ pub async fn generate_report_markup(
     ))?;
     rd.summary_lines = summary_lines;
 
-    let text = render_raw_template("report", &rd)
+    let template_name = match term {
+        Term::Fall | Term::Spring => "report",
+        Term::Summer => "report_summer",
+    };
+
+    let text = render_raw_template(template_name, &rd)
         .map_err(|e| format!("Error rendering template {:?}: {}", summary_name, &e))?;
 
     Ok(text)
