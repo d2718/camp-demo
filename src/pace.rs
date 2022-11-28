@@ -884,7 +884,7 @@ impl<'a> GoalDisplay<'a> {
 
 /// A single line (of possibly several) in a semester summary of a student's
 /// progress.
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct SummaryDisplay {
     pub label: &'static str,
     pub value: MiniString<MEDSTORE>,

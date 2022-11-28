@@ -11,6 +11,9 @@
     --table-font: "PT Sans";
     --table-size: smaller;
     --mono-font: "mplus1m";
+    --border-style: 1px solid #888;
+    --accent-bg: #ddd;
+    --bad: #822;
 }
 
 * {
@@ -23,12 +26,12 @@ div.center { text-align: center; }
 ul { padding-left: 2em; }
 p { text-align: justify; }
 kbd { font-family: var(--mono-font, monospace); }
-.bad { color: #822; }
+.bad { color: var(--bad); }
 .right { text-align: right; }
 .inline { display: inline-block; }
 
 button {
-    border: 1px solid #888;
+    border: var(--border-style);
     border-radius: 0.5rem;
     padding: 0.5rem;
     display: inline-flex;
@@ -42,7 +45,7 @@ div#header {
     justify-content: space-between;
     align-items: center;
     padding: 1rem; gap: 1rem;
-    background-color: #ddd;
+    background-color: var(--accent-bg);
 }
 
 div#controls {
@@ -67,7 +70,7 @@ div#cals {
 table.cal {
     border-collapse: collapse;
     font-family: var(--table-font);
-    border: 1px solid #888;
+    border: var(--border-style);
 }
 
 div.head {
@@ -75,7 +78,7 @@ div.head {
     justify-content: space-between;
     align-items: flex-end;
     padding: 0.5ex; gap: 1em;
-    background-color: #ddd;
+    background-color: var(--accent-bg);
     cursor: pointer;
 }
 div.head > div {
@@ -88,9 +91,9 @@ div.head > div:first-child { align-items: flex-start; }
 div.head > div:last-child  { align-items: flex-end; }
 div.head span.name { font-size: larger; }
 
-table.inc span.name { color: #822; }
-table.lag span.lag { color: #822; }
-table.count span.count { color: #822; }
+table.inc span.name { color: var(--bad); }
+table.lag span.lag { color: var(--bad); }
+table.count span.count { color: var(--bad); }
 
 table.cal tbody { display: none; }
 
@@ -109,10 +112,14 @@ table.cal tbody tr.done    { background-color: #cfc; }
 table.cal tbody tr.late    { background-color: #ffc; }
 table.cal tbody tr.overdue { background-color: #fcc; }
 table.cal tbody tr.yet     { background-color: white; }
+table.cal tbody tr.summary { 
+    background-color: var(--accent-bg);
+    text-align: right;
+}
 
-table.cal tbody tr.extra { background-color: #ddd; }
+table.cal tbody tr.extra { background-color: var(--accent-bg); }
 table.cal tbody tr.extra button {
-    border: 1px solid #888;
+    border: var(--border-style);
     border-radius: 0.5em;
     padding: 0.5em;
 }
@@ -130,7 +137,7 @@ ul.dotless > li {
     padding: 0.5ex;
     border: 1px dotted white;
 }
-ul.dotless > li:hover { border: 1px dotted #888; }
+ul.dotless > li:hover { border: var(--border-style); }
 button#email-all { align-self: end; }
 
 textarea#email-text {
@@ -165,7 +172,7 @@ dialog#view-completion table {
     border-collapse: collapse;
     margin-bottom: 1rem;
 }
-dialog#view-completion table tr:nth-child(even) { background-color: #ddd; }
+dialog#view-completion table tr:nth-child(even) { background-color: var(--accent-bg); }
 dialog#view-completion table tr:nth-child(odd) td:nth-child(2) div:nth-child(even) { background-color: #dde; }
 dialog#view-completion table tr:nth-child(even) td:nth-child(2) div:nth-child(even) { background-color: #ede; }
 

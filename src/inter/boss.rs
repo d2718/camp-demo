@@ -265,11 +265,19 @@ fn write_cal_table<W: Write>(p: &Pace, glob: &Glob, mut buff: W) -> Result<(), S
 
     let mut rows: Vec<u8> = Vec::new();
     for row in pd.rows.iter() {
-        if let RowDisplay::Goal(g) = row {
-            write_cal_goal(g, &mut rows).map_err(|e| {
-                format!("Error writing cal for {:?}: {}", &p.student.base.uname, &e)
-            })?;
+        match row {
+            RowDisplay::Goal(g) => {
+                write_cal_goal(g, &mut rows).map_err(|e| format!(
+                    "Error writing cal for {:?}: {}", &p.student.base.uname, &e
+                ))?;
+            },
+            RowDisplay::Summary(s) => {
+                write_template("boss_summary_row", &s, &mut rows).map_err(|e| format!(
+                    "Error writing cal for {:?}: {}", &p.student.base.uname, &e
+                ))?;
+            },
         }
+
     }
     let rows = String::from_utf8(rows).map_err(|e| {
         format!(
