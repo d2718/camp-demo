@@ -1,6 +1,6 @@
 [package]
 name = "camp"
-version = "2.3.2"
+version = "2.3.4"
 edition = "2021"
 default-run = "camp"
 
