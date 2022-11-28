@@ -268,11 +268,13 @@ function make_calendar_footer(cal) {
 
 function add_grades_to_calendar(tab, cal) {
     const sem_div = DATA.dates.get("end-fall");
+    const year_end = DATA.dates.get("end-spring");
 
     const semf_due = [];
     const sems_due = [];
     const semf_done = [];
     const sems_done = [];
+    const summer_done = [];
 
     let semf_inc = false;
     let sems_inc = false;
@@ -292,13 +294,19 @@ function add_grades_to_calendar(tab, cal) {
             const done = UTIL.iso2date(g.done);
             if(done < sem_div) {
                 semf_done.push(g);
-            } else {
+            } else if(done < year_end) {
                 sems_done.push(g);
+            } else {
+                summer_done.push(g);
             }
         }
     }
 
-    console.debug(semf_due, sems_due, semf_done, sems_done, semf_inc, sems_inc);
+    console.debug(
+        semf_due, sems_due,
+        semf_done, sems_done, summer_done,
+        semf_inc, sems_inc
+    );
 
     if(semf_done.length > 0) {
         const final_goal = semf_done.at(-1);

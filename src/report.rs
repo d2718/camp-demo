@@ -57,7 +57,8 @@ fn max_chunk_lengths(chunks: &[Vec<&str>]) -> Result<Vec<usize>, &'static str> {
 }
 
 fn format_markdown_table(table_input: String) -> Result<String, String> {
-    let lines: Vec<&str> = table_input.split("\n").collect();
+    let lines: Vec<&str> = table_input.split("\n")
+        .map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
     
     let chunks: Vec<Vec<&str>> = lines.iter()
         .map(|line| line.split('|').map(|s| s.trim()).collect())
@@ -460,14 +461,19 @@ impl<'a, 'b> ReportData<'a> {
             .map_err(|e| format!("Error writing fall semester grade: {}", &e))?;
         let spring_pct = write_maybe_percent(pd.spring_total)
             .map_err(|e| format!("Error writing spring semester grade: {}", &e))?;
+        
+        let pace_head_file = match term {
+            Term::Fall | Term::Spring => "data/report_pace_head.md",
+            Term::Summer => "data/report_pace_head_summer.md",
+        };
 
         let pace_lines = {
             let mastery: BTreeMap<i64, MasteryStatus> =
                 sc.mastery.iter().map(|m| (m.id, m.status)).collect();
 
-            let mut lines = std::fs::read("data/report_pace_head.md")
+            let mut lines = std::fs::read(pace_head_file)
                 .map_err(|e| format!(
-                    "Unable to read file \"data/report_pace_head.md\": {}", &e
+                    "Unable to read file {:?}: {}", pace_head_file, &e
                 ))?;
 
             for gd in pd

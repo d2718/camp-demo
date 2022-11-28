@@ -1103,7 +1103,7 @@ impl<'a> PaceDisplay<'a> {
                     semf_total += score;
                     semf_done += 1;
                     semf_last_id = Some(g.id);
-                } else {
+                } else if d < sems_end {
                     sems_total += score;
                     sems_done += 1;
                     sems_last_id = Some(g.id);
