@@ -48,3 +48,10 @@ Key: 1---needs improvement, 2---age-appropriate, 3---outstanding.
 ## Summary
 
 {{ summary_lines }}
+
+```{=latex}
+\vspace*{\fill}
+\begin{flushright}
+{{ timestamp }}
+\end{flushright}
+```

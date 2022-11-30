@@ -17,10 +17,13 @@ use crate::{
     format_maybe_date,
     inter::{render_raw_template, write_raw_template},
     pace::{GoalDisplay, PaceDisplay, RowDisplay, Term},
-    MiniString, UnifiedError, SMALLSTORE,
+    MiniString, UnifiedError, SMALLSTORE, MEDSTORE,
 };
 
 const DATE_FMT: &[FormatItem] = format_description!("[month repr:short] [day]");
+const TIMESTAMP_FMT: &[FormatItem] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second] UTC"
+);
 
 fn write_percent(frac: f32) -> Result<MiniString<SMALLSTORE>, String> {
     let pct = (frac * 100.0_f32).round();
@@ -354,6 +357,7 @@ pub struct ReportData<'a> {
     spring_pct: MiniString<SMALLSTORE>,
     spring_letter: &'a str,
     summary_lines: String,
+    timestamp: MiniString<MEDSTORE>,
 }
 
 fn reqs_complete(is_incomplete: bool) -> &'static str {
@@ -606,6 +610,12 @@ They have {} chapter{} left before their {} academic year is complete.",
             .map_err(|e| format!(
                 "error writing list of courses completed during Summer: {}", &e
             ))?;
+        
+        let mut timestamp: MiniString<MEDSTORE> = MiniString::new();
+        time::OffsetDateTime::now_utc().format_into(&mut timestamp, &TIMESTAMP_FMT)
+            .map_err(|e| format!(
+                "error formatting timestamp: {}", &e
+            ))?;
 
         let rd = ReportData {
             rest: pd.rest,
@@ -638,6 +648,7 @@ They have {} chapter{} left before their {} academic year is complete.",
             spring_pct,
             spring_letter,
             summary_lines: String::new(),
+            timestamp,
         };
 
         log::debug!("{:#?}", &rd);
@@ -705,7 +716,7 @@ pub async fn render_markdown(text: String, glob: &Glob) -> Result<Vec<u8>, Unifi
 
     let format: &str = match glob.pandoc_format.as_ref() {
         Some(fmt) => fmt,
-        None => "gfm+smart",
+        None => "markdown+smart+raw_attribute",
     };
 
     let req = Request::builder()

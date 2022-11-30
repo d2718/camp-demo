@@ -3,7 +3,7 @@ documentclass: article
 geometry: margin=3cm
 ---
 
-# Mathematics Semester Report
+# Mathematics Report
 Camelot Academy &ast; 809 Proctor St &ast; Durham, NC 27707 \
 phone: 909 632-3040 &ast; fax: 919 682-4320
 
@@ -20,3 +20,10 @@ Teacher: {{teacher}} \
 ## Summary
 
 {{ summary_lines }}
+
+```{=latex}
+\vspace*{\fill}
+\begin{flushright}
+{{ timestamp }}
+\end{flushright}
+```
