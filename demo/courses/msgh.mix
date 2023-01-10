@@ -1,0 +1,16 @@
+title = "Honors Geometry"
+sym = "msgh"
+book = "Mathspace Geometry"
+level = 10.6
+
+1,13,,Geometry Basics
+2,8,,Logic & Reasoning
+3,8,,Parallel & Perpendicular Lines
+4,10,,Transformations
+5,9,,Triangles & Congruence
+6,9,,Similarity
+7,11,,Special Segments
+8,12,,Right Triangle Trigonometry
+9,9,,Polygons & Quadrilaterals
+10,10,,Circles
+11,11,,Solids

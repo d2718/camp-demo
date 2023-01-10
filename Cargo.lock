@@ -196,7 +196,7 @@ dependencies = [
 
 [[package]]
 name = "camp"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "axum",
  "blake3",
@@ -218,6 +218,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-postgres",
+ "tokio-util",
  "toml",
  "tower",
  "tower-http",

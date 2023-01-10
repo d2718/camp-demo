@@ -25,6 +25,7 @@ smallvec = { version = "^1.9", features = ["write"] }
 time = { version = "^0.3", features = ["formatting", "macros", "parsing"] }
 tokio = { version = "^1.2", features = ["io-util", "macros", "process", "rt", "time"] }
 tokio-postgres = { version = "^0.7", features = ["array-impls", "with-time-0_3"] }
+tokio-util = { version = "^0.7", features = ["io"] }
 toml = "^0.5"
 tower = "^0.4"
 tower-http = { version = "^0.3", features = ["fs", "set-header"] }

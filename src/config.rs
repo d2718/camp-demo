@@ -125,6 +125,9 @@ pub struct ConfigFile {
     /// system is running, this email address can get changed through normal
     /// means.
     pub admin_email: Option<String>,
+    /// URI for making Sendgrid requests to send emails. Will default to
+    /// "https://api.sendgrid.com/v3/mail/send".
+    pub sendgrid_uri: Option<String>,
     /// Value of the `Authorization` header required in a Sendgrid request in
     /// order to send email.
     pub sendgrid_auth_string: String,
@@ -160,6 +163,7 @@ pub struct Cfg {
     pub default_admin_uname: String,
     pub default_admin_password: String,
     pub default_admin_email: String,
+    pub sendgrid_uri: hyper::Uri,
     pub sendgrid_auth_string: String,
     pub social_traits: Vec<String>,
     pub addr: SocketAddr,
@@ -182,6 +186,7 @@ impl std::default::Default for Cfg {
             default_admin_uname: "root".to_owned(),
             default_admin_password: "toot".to_owned(),
             default_admin_email: "admin@camp.not.an.address".to_owned(),
+            sendgrid_uri: "https://api.sendgrid.com/v3/mail/send".parse().unwrap(),
             sendgrid_auth_string: "".to_owned(),
             social_traits: vec![
                 "Class Participation".to_owned(),
@@ -231,6 +236,10 @@ impl Cfg {
         }
         if let Some(s) = cf.admin_email {
             c.default_admin_email = s;
+        }
+        if let Some(s) = cf.sendgrid_uri {
+            c.sendgrid_uri = hyper::Uri::try_from(s.as_str())
+                .map_err(|e| format!("Error parsing {:?} as Sendgrid URI: {}", &s, &e))?;
         }
         if let Some(v) = cf.social_traits {
             c.social_traits = v;
@@ -296,6 +305,7 @@ pub struct Glob {
     auth: Arc<RwLock<auth::Db>>,
     data: Arc<RwLock<Store>>,
     pub uri: String,
+    pub sendgrid_uri: hyper::Uri,
     pub sendgrid_auth: String,
     pub calendar: Vec<Date>,
     pub dates: HashMap<String, Date>,
@@ -1520,6 +1530,7 @@ pub async fn load_configuration<P: AsRef<Path>>(path: P) -> Result<Glob, Unified
         uri: cfg.uri,
         auth: Arc::new(RwLock::new(auth_db)),
         data: Arc::new(RwLock::new(data_db)),
+        sendgrid_uri: cfg.sendgrid_uri,
         sendgrid_auth: cfg.sendgrid_auth_string,
         dates: HashMap::new(),
         calendar: Vec::new(),

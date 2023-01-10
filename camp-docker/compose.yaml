@@ -1,0 +1,14 @@
+services:
+  postgres:
+    build: postgres
+    ports:
+      - "8002:5432"
+  pandocker:
+    build: pandocker
+  sendgrid_mock:
+    build: sendgrid_mock
+  camp:
+    build: camp
+    command: sh -c './wait-for postgres:5432 -- ./camp'
+    ports:
+      - "8001:8001"

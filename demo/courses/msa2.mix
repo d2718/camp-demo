@@ -1,0 +1,14 @@
+title = "Algebra II"
+sym = "msa2"
+book = "Mathspace Algebra 2"
+level = 11.1
+
+1,12,,Functions
+2,11,,Complex Numbers & Quadratics
+3,8,,Polynomials
+4,9,,Radicals
+5,7,,Rational Functions
+6,6,,Exponents & Logarithms
+7,7,,Sequences & Series
+8,6,,Triangular & Circular functions
+11,5,,Statistics

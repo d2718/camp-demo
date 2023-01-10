@@ -1,0 +1,14 @@
+title = "Algebra II"
+sym = "a2"
+book = "HBJ Algebra 2 w/Trigonometry"
+level = 11.0
+
+1,9,,Real Numbers
+2,7,,Equations & Inequalities
+3,10,,Graphing
+4,8,,Linear Systems
+5,7,,Relations & Functions
+6,12,,Polynomials
+7,10,,Rational Expressions
+8,14,,Radicals & Quadratics
+9,11,,Complex Numbers & Quadratics

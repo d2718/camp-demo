@@ -1,0 +1,17 @@
+title = "Honors Geometry"
+sym = "phgh"
+book = "Prentice Hall Geometry"
+level = 10.55
+
+1,9,,Tools of Geometry
+2,7,,Reasoning & Proof
+3,9,,Parallel & Perpendicular Lines
+4,9,,Congruent Triangles
+5,7,,Triangle Relationships
+6,9,,Quadrilaterals
+7,10,,Area
+8,6,,Similarity
+9,7,,Right Triangle Trigonometry
+10,10,,Surface Area & Volume
+11,8,,Circles
+12,9,,Transformations

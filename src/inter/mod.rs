@@ -576,7 +576,7 @@ pub async fn make_sendgrid_request(
     glob: &Glob,
     student: MiniString<MEDSTORE>,
 ) -> Result<(), String> {
-    use hyper::{Body, Client, Method, Uri};
+    use hyper::{Body, Client, Method};
 
     log::trace!(
         "make_sendgrid_request( [ {} bytes of body ] ) called.",
@@ -584,19 +584,16 @@ pub async fn make_sendgrid_request(
     );
     log::debug!("Sendgrid request body:\n{}", &json_body);
 
-    let target_uri: Uri = "https://api.sendgrid.com/v3/mail/send"
-        .parse()
-        .map_err(|e| format!("Error parsing target URI: {}", &e))?;
     let https = hyper_rustls::HttpsConnectorBuilder::new()
         .with_native_roots()
-        .https_only()
+        .https_or_http()
         .enable_http1()
         .build();
     let client: Client<_, hyper::Body> = Client::builder().build(https);
 
     let req = Request::builder()
         .method(Method::POST)
-        .uri(target_uri)
+        .uri(&glob.sendgrid_uri)
         .header("Authorization", &glob.sendgrid_auth)
         .header("Content-Type", "application/json")
         .body(Body::from(json_body))

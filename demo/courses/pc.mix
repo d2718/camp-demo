@@ -1,0 +1,12 @@
+title = "Precalculus"
+sym = "pc"
+book = "Precalculus: Functions & Graphs"
+level = 12.2
+
+1,8,,Topics from Algebra
+2,9,,Graphs & Functions
+3,8,,Polynomials & Rat'l Functions
+4,8,,Exponential & Logarithmic Functions
+5,9,,Trigonometric Functions
+6,8,,Analytic Trigonometry
+7,8,,Applications of Trigonometry

@@ -1,8 +1,0 @@
-<tr class="late">
-    <td title="Calculus: Graphical, Numerical, Algebraic">Honors Calculus</td>
-    <td title="Exponential and Logarithmic Functions">Chapter 1</td>
-    <td>R I</td>
-    <td>Aug 17</td>
-    <td>Aug 18</td>
-    <td>100</td>
-</tr>

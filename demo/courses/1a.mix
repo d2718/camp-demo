@@ -1,0 +1,20 @@
+title = "Pre-Algebra"
+sym = "1a"
+book = "HBJ Introductory Algebra 1"
+level = 8.8
+
+1,7,,Expressions & Formulas
+2,9,,Properties of Numbers
+3,7,,Basic Number Concepts
+4,9,,Fractions
+5,9,,Solving Equations
+6,8,,Equations & Problem Solving
+7,11,"Ratio, Proportion, Percent"
+8,9,,Real Numbers
+9,9,,Real Numbers: Addition & Subtraction
+10,8,,Real Numbers: Multiplication & Division
+11,8,,More Solving Equations
+12,8,,More Equations & Problem Solving
+13,7,,Inequalities
+14,9,,Relations & Functions
+15,8,,Systems of 2 Equations

@@ -2,4 +2,7 @@
 /scratch
 /deploy/*
 /prod
-/demo
+/camp-docker/camp/camp
+/camp-docker/pandocker/pandocker
+/camp-docker/sendgrid_mock/sendgrid_mock
+/demo_data

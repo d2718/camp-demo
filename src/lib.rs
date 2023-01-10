@@ -32,7 +32,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Format for `time::Date`s used for server-client interchange and also as a
 /// display format in the Admin and Teacher views.
-const DATE_FMT: &[FormatItem] = format_description!("[year]-[month]-[day]");
+pub const DATE_FMT: &[FormatItem] = format_description!("[year]-[month]-[day]");
 
 /**
 The [`time`] crate offers no way to conveniently summon up a current [`Date`],

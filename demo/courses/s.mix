@@ -1,0 +1,10 @@
+title = "Statistics"
+sym = "s"
+book = "Stats in Your World"
+level = 12.0
+
+1,6,Part I,Exploring & Understanding Data
+2,3,Part II,Relationships Between Two Variables
+3,3,Part III,Gathering Data
+4,4,Part IV,Randomness & Probability
+5,5,Part V,From Data at Hand to World at Large

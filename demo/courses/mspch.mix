@@ -1,0 +1,20 @@
+title = "Honors Precalculus"
+sym = "mspch"
+book = "Mathspace Precalculus"
+level = 12.7
+
+#chapter,   weight, title,  subject
+1,11,,Functions
+2,12,,Polynomials & Rational Exp'ns
+3,12,,Exponents & Logarithms
+4,9,,Triangular & Circular Functions
+5,8,,Trigonometric Graphs
+6,7,,Trigonometric Identities
+7,9,,Trig Inverses & Equations
+8,11,,Applications of Trig
+#Conic Sections
+10,8,,Linear Systems & Matricies
+11,8,,Vectors
+12,9,,Complex Numbers & Polar Eqxns
+13,7,,Sequences & Series
+14,7,,Limits & Continuity

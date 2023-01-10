@@ -1,0 +1,20 @@
+title = "Precalculus"
+sym = "mspc"
+book = "Mathspace Precalculus"
+level = 12.2
+
+#chapter,   weight, title,  subject
+1,11,,Functions
+2,12,,Polynomials & Rational Exp'ns
+3,7,,Exponents & Logarithms
+4,8,,Triangular & Circular Functions
+5,5,,Trigonometric Graphs
+#6,9,,Trigonometric Identities
+7,7,,Trig Inverses & Equations
+8,6,,Applications of Trig
+#Conic Sections
+10,5,,Linear Systems & Matricies
+11,6,,Vectors
+12,6,,Complex Numbers & Polar Eqxns
+13,5,,Sequences & Series
+#14,7,,Limits & Continuity

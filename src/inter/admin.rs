@@ -161,6 +161,7 @@ pub async fn api(
         "add-completion" => add_completion(body, &headers, glob.clone()).await,
         "delete-completion" => delete_completion(&headers, glob.clone()).await,
         "reset-students" => reset_students(glob.clone()).await,
+        "refresh-all" => refresh_wrapper(glob.clone()).await,
         x => respond_bad_request(format!(
             "{:?} is not a recognizable x-camp-action value.",
             x
@@ -1134,4 +1135,26 @@ async fn delete_completion(headers: &HeaderMap, glob: Arc<RwLock<Glob>>) -> Resp
     };
 
     update_completion(uname, glob).await
+}
+
+async fn refresh_all(glob: Arc<RwLock<Glob>>) -> Result<(), String> {
+    let mut glob = glob.write().await;
+
+    glob.refresh_users().await?;
+    glob.refresh_courses().await?;
+    glob.refresh_calendar().await?;
+    glob.refresh_dates().await?;
+
+    Ok(())
+}
+
+async fn refresh_wrapper(glob: Arc<RwLock<Glob>>) -> Response {
+    match refresh_all(glob).await {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            e
+        ).into_response(),
+    }
+
 }

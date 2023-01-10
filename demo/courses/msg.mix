@@ -1,0 +1,16 @@
+title = "Geometry"
+sym = "msg"
+book = "Mathspace Geometry"
+level = 10.1
+
+1,13,,Geometry Basics
+2,8,,Logic & Reasoning
+3,7,,Parallel & Perpendicular Lines
+4,9,,Transformations
+5,8,,Triangles & Congruence
+6,7,,Similarity
+7,8,,Special Segments
+8,12,,Right Triangle Trigonometry
+9,8,,Polygons & Quadrilaterals
+10,8,,Circles
+11,6,,Solids

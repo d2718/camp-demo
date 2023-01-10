@@ -1,0 +1,21 @@
+title = "Algebra I"
+sym = "1b"
+book = "HBJ Introductory Algebra 2"
+level = 9.0
+
+1,9,,Operations
+2,8,,Real Numbers
+3,9,,Equations & Problem Solving
+4,7,,Problem Solving: One Variable
+5,9,,Inequalities
+6,8,,Exponents
+7,10,,Radicals
+8,9,,Polynomials
+9,9,,Factoring Polynomials
+10,9,,Rational Exp'ns Mult & Div
+11,9,,Rational Exp'ns Add & Sub
+12,8,,Relations & Functions
+13,9,,Linear Functions
+14,7,,Linear Systems Part I
+15,9,,Linear Systems Part II
+16,7,,Systems of Inequalities

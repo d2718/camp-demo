@@ -1,0 +1,15 @@
+title = "Honors Precalculus"
+sym = "pch"
+book = "Precalculus: Functions & Graphs"
+level = 12.7
+
+1,8,,Topics from Algebra
+2,9,,Graphs & Functions
+3,8,,Polynomials & Rat'l Functions
+4,8,,Exponential & Logarithmic Functions
+5,9,,Trigonometric Functions
+6,8,,Analytic Trigonometry
+7,8,,Applications of Trigonometry
+8,12,,Linear Algebra
+9,10,,"Sequences, Series, Probability"
+10,8,,Topics from Analytic Geometry

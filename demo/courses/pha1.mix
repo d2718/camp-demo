@@ -1,0 +1,18 @@
+title = "Algebra I"
+sym = "pha1"
+book = "Prentice Hall Algebra 1"
+level = 9.05
+
+#chapter,   weight, title,  subject
+1,11,,Tools of Algebra
+2,9,,Solving Equations
+3,7,,Solving Inequalities
+4,8,,Using Proportions
+5,7,,Graphs & Functions
+6,8,,Linear Eqxns & Graphs
+7,7,,Linear Systems
+8,10,,Exponents
+9,9,,Polynomials
+10,10,,Quadratics
+11,8,,Radicals
+12,7,,Rational Expressions

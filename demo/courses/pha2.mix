@@ -1,0 +1,17 @@
+title = "Algebra II"
+sym = "pha2"
+book = "Prentice Hall Algebra 2"
+level = 11.05
+
+#chapter,   weight, title,  subject
+1,8,,Tools of Algebra
+2,9,,"Functions, Equations, Graphs"
+3,6,,Linear Systems
+4,6,,Matricies
+5,10,,Quadratics
+6,8,,Linear Eqxns & Graphs
+7,9,,Radicals
+8,6,,Exponents & Logarithms
+9,9,,Rational Functions
+10,5,,Conic Sections
+11,5,,Sequences & Series

@@ -1,0 +1,16 @@
+title = "Algebra I"
+sym = "msa1"
+book = "Mathspace Algebra 1"
+level = 9.1
+
+#chapter,   weight, title,  subject
+1,13
+2,11,
+3,8
+4,15
+5,10
+6,9
+7,12
+8,8
+9,8
+10,11

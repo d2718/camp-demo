@@ -1,0 +1,20 @@
+title = "Honors Algebra II"
+sym = "a2h"
+book = "HBJ Algebra 2 w/Trigonometry"
+level = 11.5
+
+1,9,,Real Numbers
+2,7,,Equations & Inequalities
+3,10,,Graphing
+4,11,,Linear Systems
+5,7,,Relations & Functions
+6,12,,Polynomials
+7,10,,Rational Expressions
+8,14,,Radicals & Quadratics
+9,13,,Complex Numbers & Quadratics
+10,11,,Conic Sections
+11,12,,Logarithms
+12,9,,Sequences & Series
+13,9,,3rd Degree Systems
+14,8,,Probability
+15,12,,Trigonometry

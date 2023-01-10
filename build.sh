@@ -1,14 +1,19 @@
-#!/usr/bin/bash
+#!/bin/sh
 
-set -xeuo pipefail
+set -xeu pipefail
 
 TARGET=x86_64-unknown-linux-musl
-BINARY=target/$TARGET/release/camp
-ARTIFACT=us-east1-docker.pkg.dev/camp-357714/camp-repo/camp
+DIR=target/$TARGET/release
 
 cargo build --target $TARGET --release
-strip $BINARY
 
-docker build -f main.Dockerfile -t camp -t $ARTIFACT .
-docker push $ARTIFACT
+for PROG in camp pandocker sendgrid_mock; do
+    BIN=$DIR/$PROG
+    DEST=camp-docker/$PROG/$PROG
+    strip $BIN
+    cp $BIN $DEST
+done
 
+POPBIN=target/$TARGET/release/demo_data
+strip $POPBIN
+cp $POPBIN ./

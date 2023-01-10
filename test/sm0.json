@@ -1,0 +1,9 @@
+{
+    "to": [
+        {"email": "dx2718@gmail.com", "name": "Zero Cool"}
+    ],
+    "from": {"email": "ck@hacktheplanet.net", "name": "Goldstein, Immanuel" },
+    "reply_to": {"email": "ck@hacktheplanet.net", "name": "Goldstein, Immanuel" },
+    "subject": "Super-secret hacker stuff.",
+    "body": "j/k what's doing it with Crash like?"
+}
