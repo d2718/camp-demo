@@ -1,201 +1,106 @@
-# `camp` (Camelot Academy Math Pace system)
+# `camp-demo`
 
-It is the author's hope that this document contains all the information
-necessary to deploy this system into production.
+This is a demonstration version of the
+[Camelot Academy Math Pace System](https://github.com/d2718/camp), modified
+to be easily-runnable on one's local machine, along with some made-up
+sample data. (The original `camp` is meant to run on the Google Cloud
+Platform.)
 
-## Preparation for Deployment
+## TL; DR
 
-This system is intended to be deployed as a
-[Google Cloud service](https://cloud.google.com/) with two parts:
-the server process, to be deployed as a Docker container on
-[Google Cloud Run](https://console.cloud.google.com/run), and a backing
-[Google Cloud SQL](https://console.cloud.google.com/sql) database store.
-
-### 0. Your System Requirements
-
-The server is written in Rust, and requires
-[The Rust Toolchain](https://www.rust-lang.org/tools/install). It is meant to
-be deployed in an Alpine Linux container, and thus requires the
-`x86_64-unknown-linux-musl` target:
-
-```sh
-rustup target install x86_64-unknown-linux-musl
+Maybe:
+```bash
+$ rustup update
+$ rustup target add x86_64-unknown-linux-musl
 ```
 
-But the Rust compiler may still not have everything it needs to build for the
-`musl` target, so you may need to install some more stuff. For example, on
-Debian, you also need the `must-tools` Debian package installed.
-
-You will also need Docker to build/push your container.
-The [Docker Engine](https://docs.docker.com/engine/install/) is fine,
-you won't need the whole Docker Desktop.
-
-You may also need the
-[`gcloud` command-line tool](https://cloud.google.com/sdk/docs/install)
-in order to provide authentication for Docker pushing your server's
-container to the [Artifact Registry](https://console.cloud.google.com/artifacts).
-
-### 1. Create the Database
-
-Create a Google Cloud SQL instance with a Postgres 14 instance (other
-versions of Postgres will almost assuredly work, but this has been verifiedly
-deployed with a version 14 store). Create a user for the sytem to use and
-two databases to which the user has access. One of these will be the
-authorization database, the other will be the "data" database.
-
-(Creating users and databases can be done through the Cloud SQL console,
-but it may be easier to use the Cloud Shell and cnnect to the instance
-directly. See
-[CREATE ROLE](https://www.postgresql.org/docs/current/sql-createrole.html)
-and
-[CREATE DATABASE](https://www.postgresql.org/docs/current/sql-createdatabase.html)
-in the
-[PostgreSQL Documentation](https://www.postgresql.org/docs/current/index.html).)
-
-Choose the region carefully, and also remember it, because that's where you
-want to create all your Google Cloud resources for this project.
-
-Remember these values, you'll need them later:
-
-  * the system's Postgres `$user_name`
-  * that user's `$user_password`
-  * the name of the `$auth_database`
-  * the name of the `$data_database`
-
-### 2. Generate an Artifact Registry
-
-Create an instance of a
-[Google Cloud Artifact Registry](https://console.cloud.google.com/artifacts)
-repository in the same region as your Cloud SQL instance. Take note of
-the URI you'll need to use to push it. (There's a way you can copy this
-value to the clipboard by clicking on an icon in the control panel.)
-So note
-
-  * `$artifact_registry_uri`
-
-### 3. Sign up for [Sendgrid](https://sendgrid.com/)
-
-Jump through all the hoops; you will ultimately need to take note of your
-authorization token. It starts with `Bearer ` and is followed by a bunch
-of mostly-alphanumeric characters.
-
-So note
-
-  * `$sendgrid_auth_token`
-
-### 4. Build the Server Process
-
-In the local repository, you should just be able to
-
-```sh
-cargo build --release --target x86_64-unknown-linux-musl
+Definitely:
+```bash
+$ git clone https://github.com/d2718/camp-demo
+$ cd camp-demo
+$ bash build.sh
+#   ...lots of downloading and building
+$ docker compose -f camp-docker/compose.yaml up &
+#   ...wait until the log messaging stops spewing
+$ ./demo_data
 ```
 
-and everything should work. You'll also want to strip the debugging symbols
-from your binary (you don't need 'em in the Docker container!).
+## Build
 
-```sh
-strip target/x86_64-unknown-linux-musl/release/camp
+Clone the repo and descend:
+```bash
+$ git clone https://github.com/d2718/camp-demo
+
+$ cd camp-demo
 ```
 
-### 5. Deploy it Once
+This uses [Docker Compose](https://docs.docker.com/compose/), and binds to
+ports 8001 and 5432 on the host machine, so be prepared.
 
-It won't work yet, but you need to do this in order to get a URI for your
-server process so you can configure it properly.
+I don't know what the absolute minimum version of Rust required is, but it
+definitely works using 1.66 (and may very well work with any version of the
+2021 edition). You will also need the `musl` target installed if you don't
+already:
+```bash
+$ rustup target add x86_64-unknown-linux-musl
+```
+You may also need to install some additional stuff; for example, on
+Debian-based systems, you'll need the `musl-tools` package. If you're
+on Windows, WSL2 makes this all very easy.
 
-In order to build the Docker container, you need to create a deployment
-configuration file, `deploy/config.toml`. For now, the only thing you need
-in that file is your `$sendgrid_auth_token`:
+Okay, once all your prereqs are satisfied, you should be able to build
+the whole thing with the build script:
+```bash
+$ bash build.sh
+```
+Cargo will grind for a while, downloading and building, then it will
+copy the necessary binaries to build the images into their places in the
+`camp-docker` directory, and also put the program to insert sample data
+in the current directory.
 
-```toml
-sendgrid_auth_string = "$sendgrid_auth_token"
+## Run
+
+```bash
+$ docker compose -f camp-docker/compose.yaml up
 ```
 
-Build the container and tag it with the appropriate destination:
+Once the docker compose log messages stop scrolling, you should be able
+to point your browser to
 
-```sh
-docker build -t camp -t $artifact_registry_uri/camp
+`http://localhost:8001/`
+
+and log in as the default administrator. The default administrator's user
+name and password are both `admin`.
+
+However! There is no data in the database yet, except for a single user
+account (the default admin, `admin`, in as whom you are logged).
+
+### Install Sample Data
+
+You can insert a tranch of sample data by running the `demo_data` program
+that has appeared in the root directory of the repository. (You will want
+to open another terminal window, because one of the functions of the
+system requires being able to see the Docker Compose log output.)
+
+```bash
+$ ./demo_data
 ```
 
-Push it:
+If you are logged in as the default admin in a browser window, you will have
+to log in again to see this data. You should be able to just reload the page.
 
-```sh
-docker push $artifact_registry_uri/camp
-```
+## Use
 
-If you encounter an authentication problem here, try
-[setting up `gcloud` authentication for Docker](https://cloud.google.com/artifact-registry/docs/docker/authentication).
+Logging in as the default admin will allow you to see all the other users'
+user names, so you can log in as other roles (boss, teacher, student) and
+see what information and functionality is available to them.
 
-Create an service in the Cloud Run console.
+### Resetting Passwords
 
-  * Use the image you just pushed.
-  * Choose the same region you've been using.
-  * Allocate CPU only during request processing.
-  * Set 0 minimum and 1 maximum instances.
-  * Allow all traffic.
-  * Set the container port to 80.
-  * 512 MB ram and 1 vCPU will work, but you can experiment with less.
-  * 60 second request timeout is probably more than enough
-  * Under "CONNECTIONS", add a Cloud SQL connection, and choose the SQL
-    instance you created earlier.
-
-If you know what you're doing, you can undboutedly change some of these
-settings if it would suit your use case.
-
-Also at this point take note of the SQL instance identifier. It will
-appear in the drop-down bar when you select the instance to connect to.
-Note
-
-  * `$sql_instance_id`
-
-The connection to the database instance will appear in the filesystem
-of your server's Docker container at the path
-`/cloudsql/$sql_instance_id`. You'll need this for configuration later.
-
-Deploy the service; even if it crashes on deployment, you can still select
-it in the console to get the service URI. Make note of the
-
-  * `$service_uri`
-
-### 6. Configure It for Real
-
-At this point you should pick a default Administrator uname/password/email
-combo. These will go into your config file to guarantee that this user
-exists on deployment. You can use this Admin to log in and add other
-Admins. So decide upon:
-
-  * `$default_admin_uname`
-  * `$default_admin_pwd`
-  * `$default_admin_email`
-
-Now re-edit `deploy/config.toml` with the various configuration values you
-have gathered/created:
-
-```toml
-uri = "$service_uri"
-auth_db_connect_string = "host=/cloudsql/$sql_instance_id user=$user_name password='$user_password' dbname=$auth_database"
-data_db_connect_string = "host=/cloudsql/$sql_instance_id user=$user_name password='$user_password' dbname=$data_database"
-admin_uname = "$default_admin_uname"
-admin_password = "$default_admin_pwd"
-admin_email = "$default_admin_email"
-sendgrid_auth_string = "$sendgrid_auth_token"
-host = "0.0.0.0"
-port = 80
-```
-
-(Although the `port` value shouldn't matter; it should get passed as an
-environment variable to the container, and the server process should
-read it from the environment.)
-
-### 7. Deploy it for Real
-
-Rebuild and repush the Docker container:
-
-```sh
-docker build -t camp -t $artifact_registry_uri/camp
-docker push $artifact_registry_uri/camp
-```
-
-From the Cloud Run console, select the service and click on "EDIT AND DEPLOY
-A NEW REVISION". The only thing that needs to be changed is the container
-image, where you should select the latest version. Deploy, and you're done.
+To reset the password of any user (which you'll have to do for anyone apart
+from the admin), logging in unsuccessfully will give you the option to reset
+your password by clicking on "I forgot my password." In the production version,
+this makes a call to [SendGrid](https://sendgrid.com/) to generate a
+recovery email, but for this demonstration the call is sent to a mock service
+in one of the containers that just prints the email to it standard output, so
+you'll have to _look for the email text in the docker compose log output_.
